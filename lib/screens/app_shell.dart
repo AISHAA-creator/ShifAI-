@@ -4,7 +4,7 @@ import '../utils/platform_helper.dart';
 import 'home_screen.dart';
 import 'lab_entry_form_screen.dart';
 import 'lab_history_screen.dart';
-import 'lab_scan_screen.dart';
+import 'lab_scan_entry.dart';
 
 /// Simple two-tab shell (Home / Trend) with one clear floating action for
 /// adding a result — mirrors WanisAI's pattern of a short, labeled nav and
