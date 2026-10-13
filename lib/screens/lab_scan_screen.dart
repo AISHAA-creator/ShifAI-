@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/lab_ocr_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/step_header.dart';
 import 'lab_entry_form_screen.dart';
 
-/// Photo capture + on-device OCR for a printed lab report.
-/// Camera & OCR (Google ML Kit) are Android/iOS-only — this screen is only
-/// reachable from platforms that support it (see HomeScreen's platform guard).
+/// Step 1 of the scan flow: photo capture + on-device OCR of a printed lab
+/// report. Camera and OCR (Google ML Kit) only exist on Android/iOS, so this
+/// screen is only opened there (see utils/open_add_result.dart).
 class LabScanScreen extends StatefulWidget {
   const LabScanScreen({super.key});
 
@@ -46,12 +47,11 @@ class _LabScanScreenState extends State<LabScanScreen> {
 
       if (!result.hasAnyValue) {
         setState(() => _error =
-            "Couldn't find glucose, insulin or HbA1c values in this photo. "
-            'Try a clearer, well-lit photo, or enter the values manually.');
+            "Couldn't find glucose, insulin or HbA1c in this photo. Try a "
+            'clearer, well-lit photo, or enter the values manually.');
         return;
       }
 
-      if (!mounted) return;
       Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => LabEntryFormScreen(
           fromScan: true,
@@ -62,7 +62,8 @@ class _LabScanScreenState extends State<LabScanScreen> {
           initialHba1c: result.hba1cPercent,
         ),
       ));
-    } catch (e) {
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
         _processing = false;
         _error = 'Could not read this image. Please try again or enter values manually.';
@@ -70,84 +71,239 @@ class _LabScanScreenState extends State<LabScanScreen> {
     }
   }
 
+  void _enterManually() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LabEntryFormScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan lab report')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.pastel.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.pastelBorder),
-                ),
-                child: _processing
-                    ? const Center(child: CircularProgressIndicator())
-                    : _image != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.file(_image!, fit: BoxFit.contain),
-                          )
-                        : const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.document_scanner_outlined,
-                                      size: 56, color: AppColors.accentBlue),
-                                  SizedBox(height: 12),
-                                  Text(
-                                    'Photograph a printed lab report showing '
-                                    'glucose, insulin, or HbA1c.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: AppColors.gray),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: AppColors.danger)),
-            ],
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _processing ? null : () => _capture(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt_outlined),
-                    label: const Text('Camera'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _processing ? null : () => _capture(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library_outlined),
-                    label: const Text('Gallery'),
-                  ),
-                ),
+      appBar: AppBar(title: const Text('Scan Lab Results')),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+          child: Column(
+            children: [
+              const StepHeader(current: 0),
+              const SizedBox(height: 14),
+              Expanded(child: _viewfinder()),
+              if (_error != null) ...[
+                const SizedBox(height: 10),
+                Text(_error!, style: const TextStyle(color: AppColors.dangerText)),
               ],
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const LabEntryFormScreen()),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.pastel,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.lightbulb_outline, color: AppColors.buttonBlue),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Hold your phone flat above the page. ShifAI reads your '
+                        'results on this device — nothing is uploaded.',
+                        style: TextStyle(color: AppColors.text, height: 1.35, fontSize: 13.5),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: const Text('Enter values manually instead'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _viewfinder() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF14507F), Color(0xFF082C4A)],
+          ),
+        ),
+        child: Stack(
+          children: [
+            if (_image != null)
+              Positioned.fill(
+                child: Opacity(opacity: 0.85, child: Image.file(_image!, fit: BoxFit.cover)),
+              ),
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.all(26),
+                child: CustomPaint(painter: _FramePainter()),
+              ),
+            ),
+            Positioned(
+              top: 18,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: _pill('Processed on your device', icon: Icons.lock_outline),
+              ),
+            ),
+            Center(
+              child: _processing
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : (_image == null
+                      ? _pill('Align printed paper in frame')
+                      : const SizedBox.shrink()),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 22,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _roundButton(Icons.edit_note_rounded, 'Enter values manually', _enterManually),
+                  _captureButton(),
+                  _roundButton(
+                    Icons.photo_library_outlined,
+                    'Choose from gallery',
+                    _processing ? null : () => _capture(ImageSource.gallery),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _pill(String text, {IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 16, color: AppColors.buttonBlue),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            text,
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontWeight: FontWeight.w600,
+              fontSize: 13.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roundButton(IconData icon, String tooltip, VoidCallback? onTap) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: 0.16),
+          ),
+          child: Icon(icon, color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _captureButton() {
+    return Tooltip(
+      message: 'Take a photo',
+      child: InkWell(
+        onTap: _processing ? null : () => _capture(ImageSource.camera),
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 84,
+          height: 84,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 4),
+          ),
+          child: const DecoratedBox(
+            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+            child: Icon(Icons.camera_alt_outlined, size: 32, color: AppColors.navy),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FramePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF9CCBFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+    const len = 38.0;
+    const r = 14.0;
+    final w = size.width;
+    final h = size.height;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, len)
+        ..lineTo(0, r)
+        ..quadraticBezierTo(0, 0, r, 0)
+        ..lineTo(len, 0),
+      paint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(w - len, 0)
+        ..lineTo(w - r, 0)
+        ..quadraticBezierTo(w, 0, w, r)
+        ..lineTo(w, len),
+      paint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(w, h - len)
+        ..lineTo(w, h - r)
+        ..quadraticBezierTo(w, h, w - r, h)
+        ..lineTo(w - len, h),
+      paint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(len, h)
+        ..lineTo(r, h)
+        ..quadraticBezierTo(0, h, 0, h - r)
+        ..lineTo(0, h - len),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

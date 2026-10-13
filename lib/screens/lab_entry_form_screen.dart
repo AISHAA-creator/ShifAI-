@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/lab_record.dart';
 import '../providers/lab_records_provider.dart';
+import '../providers/nav_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/step_header.dart';
 
 /// Manual entry / confirmation form for a lab record.
 /// Used both for typing values in directly and for reviewing OCR-extracted
@@ -82,6 +84,13 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     final insulinRaw = double.tryParse(_insulinCtrl.text.replaceAll(',', '.'));
     final hba1cRaw = double.tryParse(_hba1cCtrl.text.replaceAll(',', '.'));
 
+    if (glucoseRaw == null && insulinRaw == null && hba1cRaw == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter at least one value to save.')),
+      );
+      return;
+    }
+
     final record = LabRecord(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       date: _date,
@@ -95,21 +104,29 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     );
 
-    await context.read<LabRecordsProvider>().addRecord(record);
-    if (mounted) Navigator.of(context).pop();
+    final labs = context.read<LabRecordsProvider>();
+    final nav = context.read<NavProvider>();
+    final navigator = Navigator.of(context);
+    await labs.addRecord(record);
+    navigator.popUntil((route) => route.isFirst);
+    nav.setTab(1);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.fromScan ? 'Confirm scanned values' : 'Add lab result'),
+        title: Text(widget.fromScan ? 'Scan Lab Results' : 'Add lab result'),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            if (widget.fromScan) ...[
+              const StepHeader(current: 1),
+              const SizedBox(height: 16),
+            ],
             if (widget.fromScan)
               Container(
                 padding: const EdgeInsets.all(12),
@@ -191,7 +208,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
 
             ElevatedButton(
               onPressed: _save,
-              child: const Text('Save result'),
+              child: Text(widget.fromScan ? 'Confirm & calculate' : 'Save & calculate'),
             ),
           ],
         ),

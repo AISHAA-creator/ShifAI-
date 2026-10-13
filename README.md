@@ -10,11 +10,12 @@ Roughly one in three adults has insulin resistance or prediabetes, and most don'
 
 ## Current features (MVP)
 
-- **Lab report scanning** — photograph a printed lab report (glucose, insulin, HbA1c); on-device OCR (Google ML Kit) reads the values, in English or French lab terminology
-- **HOMA-IR calculation** — automatically computed from fasting glucose + insulin, with unit conversion (mg/dL, mmol/L, g/L for glucose; µIU/mL, pmol/L for insulin)
-- **Manual entry** — full fallback/confirmation form; OCR always suggests, you always confirm before saving
-- **Trend chart** — HOMA-IR history over time, with a plain-language status banner (not a diagnosis)
-- **On-device storage only** — nothing leaves the phone
+- **Dashboard** — latest HOMA-IR with its band (Optimal / Normal / Borderline / Insulin resistance likely), a sparkline of the last five tests, and two daily micro-coaching tips you can tick off
+- **Two-step scan flow** — photograph a printed lab report (glucose, insulin, HbA1c); on-device OCR (Google ML Kit) reads the values in English or French lab terminology, then you review and confirm them before anything is saved
+- **HOMA-IR calculation** — computed from fasting glucose + insulin, with unit conversion (mg/dL, mmol/L, g/L for glucose; µIU/mL, pmol/L for insulin)
+- **Trends** — color-coded HOMA-IR scale, plain-language explanation, switchable chart (HOMA-IR, glucose, HbA1c, insulin) with the target zone, and a results list you can delete from
+- **Share on WhatsApp** — send a short text summary to family or your doctor, only when you choose to
+- **On-device storage only** — nothing leaves the phone unless you share a summary
 
 ## Tech stack
 
@@ -26,6 +27,7 @@ Roughly one in three adults has insulin resistance or prediabetes, and most don'
 | Camera / gallery | image_picker |
 | Charts | fl_chart |
 | Storage | shared_preferences (local, on-device) |
+| Sharing | url_launcher (WhatsApp link) |
 
 ## Getting started
 

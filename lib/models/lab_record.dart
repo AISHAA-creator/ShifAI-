@@ -65,9 +65,9 @@ extension HomaIrBandLabel on HomaIrBand {
       case HomaIrBand.normal:
         return 'Normal';
       case HomaIrBand.earlyResistance:
-        return 'Early insulin resistance';
+        return 'Borderline';
       case HomaIrBand.significantResistance:
-        return 'Significant insulin resistance';
+        return 'Insulin resistance likely';
     }
   }
 }

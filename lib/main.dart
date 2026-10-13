@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/lab_records_provider.dart';
+import 'providers/nav_provider.dart';
 import 'screens/app_shell.dart';
 import 'theme/app_theme.dart';
 
@@ -16,6 +17,7 @@ class ShifAiApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LabRecordsProvider()),
+        ChangeNotifierProvider(create: (_) => NavProvider()),
       ],
       child: MaterialApp(
         title: 'ShifAI',
