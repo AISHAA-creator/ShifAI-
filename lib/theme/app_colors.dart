@@ -1,34 +1,80 @@
 import 'package:flutter/material.dart';
 
-/// ShifAI palette: the logo's deep navy (#00357A) for actions, tints of its
-/// light blue (#9BC2DE) for surfaces, and green / amber / red for result bands.
 class AppColors {
   AppColors._();
 
-  static const Color navy = Color(0xFF0A2540);
-  static const Color accentBlue = Color(0xFF4A8DC4);
-  static const Color buttonBlue = Color(0xFF00357A);
+  static const primary = Color(0xFF00375E);
+  static const onPrimary = Color(0xFFFFFFFF);
+  static const primaryContainer = Color(0xFF1F4E79);
+  static const secondary = Color(0xFF096493);
+  static const onSecondary = Color(0xFFFFFFFF);
+  static const secondaryContainer = Color(0xFF88CAFF);
+  static const secondaryFixed = Color(0xFFCBE6FF);
+  static const tertiary = Color(0xFF003F0B);
+  static const onTertiary = Color(0xFFFFFFFF);
+  static const tertiaryContainer = Color(0xFF005914);
+  static const tertiaryFixed = Color(0xFFA3F69C);
+  static const surface = Color(0xFFF8F9FF);
+  static const surfaceContainerLowest = Color(0xFFFFFFFF);
+  static const surfaceContainerLow = Color(0xFFEFF4FF);
+  static const surfaceContainer = Color(0xFFE5EEFF);
+  static const surfaceContainerHigh = Color(0xFFDCE9FF);
+  static const onSurface = Color(0xFF0B1C30);
+  static const onSurfaceVariant = Color(0xFF42474F);
+  static const outline = Color(0xFF72777F);
+  static const outlineVariant = Color(0xFFC2C7D0);
+  static const error = Color(0xFFBA1A1A);
+  static const errorContainer = Color(0xFFFFDAD6);
+  static const onErrorContainer = Color(0xFF93000A);
 
-  static const Color cream = Color(0xFFF5F9FD);
-  static const Color creamCard = Color(0xFFFFFFFF);
+  static const amber50 = Color(0xFFFFFBEB);
+  static const amber500 = Color(0xFFF59E0B);
+  static const amber600 = Color(0xFFD97706);
+  static const amber800 = Color(0xFF92400E);
+  static const emerald50 = Color(0xFFECFDF5);
+  static const emerald100 = Color(0xFFD1FAE5);
+  static const emerald200 = Color(0xFFA7F3D0);
+  static const emerald700 = Color(0xFF047857);
+  static const emerald800 = Color(0xFF065F46);
+  static const rose200 = Color(0xFFFECDD3);
 
-  static const Color pastel = Color(0xFFE6F0F9);
-  static const Color pastelBorder = Color(0xFFC9DDEE);
+  static const navy = primary;
+  static const accentBlue = secondaryContainer;
+  static const buttonBlue = primary;
+  static const cream = surface;
+  static const creamCard = surfaceContainerLowest;
+  static const pastel = surfaceContainerLow;
+  static const pastelBorder = outlineVariant;
+  static const text = onSurface;
+  static const gray = onSurfaceVariant;
+  static const safe = emerald700;
+  static const safeBg = emerald50;
+  static const safeText = emerald800;
+  static const warning = amber600;
+  static const warningBg = amber50;
+  static const warningText = amber800;
+  static const danger = error;
+  static const dangerBg = errorContainer;
+  static const dangerText = onErrorContainer;
+  static const gold = warning;
+}
 
-  static const Color text = Color(0xFF1B2B3C);
-  static const Color gray = Color(0xFF5F6F82);
+class AppSpacing {
+  AppSpacing._();
 
-  static const Color safe = Color(0xFF2E9E6B);
-  static const Color safeBg = Color(0xFFE2F5EC);
-  static const Color safeText = Color(0xFF1F7A52);
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 24;
+  static const double screenHorizontal = 20;
+}
 
-  static const Color warning = Color(0xFFE5920A);
-  static const Color warningBg = Color(0xFFFFF3D6);
-  static const Color warningText = Color(0xFFA45F00);
+class AppRadii {
+  AppRadii._();
 
-  static const Color danger = Color(0xFFD64545);
-  static const Color dangerBg = Color(0xFFFCE7E7);
-  static const Color dangerText = Color(0xFFB02F2F);
-
-  static const Color gold = warning;
+  static const double card = 16;
+  static const double bigCard = 24;
+  static const double input = 12;
+  static const double pill = 999;
 }

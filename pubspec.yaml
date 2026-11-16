@@ -56,6 +56,9 @@ dependencies:
   # "Share summary on WhatsApp"
   url_launcher: ^6.3.1
 
+  # Inter typography for the app theme
+  google_fonts: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
