@@ -135,31 +135,15 @@ class HomeScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: DS.text(
-                          size: 24,
-                          weight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        firstVisit
-                            ? "Let's look at your numbers"
-                            : 'Your health at a glance',
-                        style: DS.text(
-                          size: 14.5,
-                          weight: FontWeight.w500,
-                          color: DS.muted,
-                        ),
-                      ),
-                    ],
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Image.asset(
+                      'assets/images/shifai_logo.png',
+                      width: 112,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.centerLeft,
+                      semanticLabel: 'ShifAI',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -223,6 +207,33 @@ class HomeScreen extends StatelessWidget {
                           ),
                       ],
                     ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DS.text(
+                    size: 24,
+                    weight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  firstVisit
+                      ? "Let's look at your numbers"
+                      : 'Your health at a glance',
+                  style: DS.text(
+                    size: 14.5,
+                    weight: FontWeight.w500,
+                    color: DS.muted,
                   ),
                 ),
               ],

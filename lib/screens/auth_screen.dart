@@ -215,18 +215,30 @@ class _AuthScreenState extends State<AuthScreen> {
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(28, 20, 28, 12),
                       children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: DsBackButton(
-                            onPressed: () {
-                              if (_mode == _AuthMode.forgotPassword ||
-                                  _mode == _AuthMode.verifyEmail) {
-                                _changeMode(_AuthMode.signIn);
-                              } else {
-                                Navigator.of(context).maybePop();
-                              }
-                            },
-                          ),
+                        Row(
+                          children: [
+                            DsBackButton(
+                              onPressed: () {
+                                if (_mode == _AuthMode.forgotPassword ||
+                                    _mode == _AuthMode.verifyEmail) {
+                                  _changeMode(_AuthMode.signIn);
+                                } else {
+                                  Navigator.of(context).maybePop();
+                                }
+                              },
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: Image.asset(
+                                  'assets/images/shifai_logo.png',
+                                  width: 132,
+                                  fit: BoxFit.contain,
+                                  semanticLabel: 'ShifAI',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 48),
+                          ],
                         ),
                         const SizedBox(height: 30),
                         Align(alignment: Alignment.centerLeft, child: title),
