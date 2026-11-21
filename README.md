@@ -1,63 +1,143 @@
 # ShifAI
 
-AI-powered early detection for insulin resistance and prediabetes — catching risk years before it becomes Type 2 diabetes, using signals people already have.
+ShifAI helps users track insulin-resistance and prediabetes risk indicators. It calculates HOMA-IR from confirmed fasting glucose and insulin results. **It is an awareness tool, not a diagnostic device.**
 
-The name comes from the Arabic شفاء (*shifa*, "healing/cure"), with **AI** surfacing naturally inside the word.
+The name comes from the Arabic شفاء (*shifa*, “healing”), with **AI** inside the name.
 
-## Why
+## What the app includes
 
-Roughly one in three adults has insulin resistance or prediabetes, and most don't know it — the real diagnostic test (HOMA-IR) requires a fasting blood draw most people never get. Existing diabetes apps target people already diagnosed. ShifAI targets the much larger, mostly invisible group: people already on the path who don't yet know it.
+- Branded dashboard, latest saved HOMA-IR, history charts, trends, and daily coaching.
+- Manual lab-result entry and glucose/insulin unit conversion.
+- Android/iOS lab-report photo capture and gallery selection, with on-device Google ML Kit text recognition. Extracted values can be reviewed and edited before saving.
+- Supabase email registration, sign-in, email verification, password reset, and persisted authenticated sessions.
+- User-scoped cloud lab records and coaching completion state, protected by Supabase Row-Level Security (RLS).
+- AES-GCM encrypted local lab-record cache for offline access. Pending changes are synced when possible, and newer record timestamps win during reconciliation.
+- Explicit, repeat-safe import of existing local-only records into a signed-in account. Records are not silently assigned to an account.
+- DevicePreview in debug builds, with selectable simulated Android devices and dimensions.
+- Original ShifAI branding and logo at `assets/images/shifai_logo.png`.
+- Risk estimate without a blood test: enter age, sex, height, weight and waist, and an on-device logistic-regression model (trained on US NHANES data) estimates the chance that HOMA-IR is 2.9 or higher. See [Risk model](#risk-model).
 
-## Current features (MVP)
+## First-time setup: run in Chrome
 
-- **Risk estimate with no blood test** — enter age, sex, height, weight and waist; a logistic-regression model trained on US NHANES data (6,235 adults, held-out AUC 0.81) estimates the chance that your HOMA-IR is 2.9 or higher. It runs entirely on-device. See [`ml/`](ml/train_risk_model.py) for how it was trained
-- **Dashboard** — latest HOMA-IR with its band (Optimal / Normal / Borderline / Insulin resistance likely), a sparkline of the last five tests, and two daily micro-coaching tips you can tick off
-- **Two-step scan flow** — photograph a printed lab report (glucose, insulin, HbA1c); on-device OCR (Google ML Kit) reads the values in English or French lab terminology, then you review and confirm them before anything is saved
-- **HOMA-IR calculation** — computed from fasting glucose + insulin, with unit conversion (mg/dL, mmol/L, g/L for glucose; µIU/mL, pmol/L for insulin)
-- **Trends** — color-coded HOMA-IR scale, plain-language explanation, switchable chart (HOMA-IR, glucose, HbA1c, insulin) with the target zone, and a results list you can delete from
-- **Share on WhatsApp** — send a short text summary to family or your doctor, only when you choose to
-- **On-device storage only** — nothing leaves the phone unless you share a summary
+This is the easiest way to try ShifAI and does **not** require Android Studio.
 
-## Tech stack
+### 1. Install the prerequisites
 
-| Component | Tool |
-| --- | --- |
-| App | Flutter (Dart) |
-| State management | Provider |
-| OCR | google_mlkit_text_recognition |
-| Camera / gallery | image_picker |
-| Charts | fl_chart |
-| Storage | shared_preferences (local, on-device) |
-| Sharing | url_launcher (WhatsApp link) |
+- Install the [Flutter stable SDK](https://docs.flutter.dev/get-started/install). This project requires Dart SDK `^3.13.4`; Flutter 3.47.9 with Dart 3.13.7 was used for development.
+- Install [Git](https://git-scm.com/downloads).
+- Install [Google Chrome](https://www.google.com/chrome/).
 
-## Getting started
+Open a new PowerShell window and check that Flutter is available:
 
-```bash
-flutter pub get
-flutter run
+```powershell
+flutter --version
+flutter doctor -v
 ```
 
-Camera-based OCR is Android/iOS only (Google ML Kit has no web or desktop implementation) — on other platforms the app falls back to manual entry automatically.
+Resolve Flutter SDK or web setup issues reported by `flutter doctor` before continuing. Android Studio and the Android toolchain are not needed for this Chrome workflow; those warnings can be ignored if you only want the web preview.
 
-## Roadmap
+### 2. Download the project
 
-- [ ] Acanthosis Nigricans skin-marker screening (camera-based)
-- [ ] Prescription scanner + medication reminders
-- [ ] Post-meal walk nudges (wearable step data via HealthKit / Health Connect)
-- [ ] Food guidance tied to logged patterns
-- [ ] WhatsApp caretaker/family alerts
+On the GitHub page for this repository, select **Code** and copy the HTTPS clone URL. Replace the example URL below with that URL:
+
+```powershell
+git clone https://github.com/YOUR-GITHUB-NAME/YOUR-REPOSITORY.git
+Set-Location YOUR-REPOSITORY
+```
+
+If you already downloaded or cloned the project, open PowerShell in the folder containing this `README.md` instead.
+
+### 3. Get packages and check Chrome is available
+
+```powershell
+flutter pub get
+flutter devices
+```
+
+Confirm that Chrome appears in the device list. If it does not, enable Flutter web support, restart PowerShell, and check again:
+
+```powershell
+flutter config --enable-web
+flutter devices
+```
+
+Continue to the Supabase setup below before trying to sign in or create an account.
+
+### 4. Configure Supabase, then run ShifAI
+
+Create/configure a Supabase project using the next section, then run this command from the project folder. Replace both example values with your own project values:
+
+```powershell
+flutter run -d chrome --web-port=5000 --dart-define=SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+```
+
+The app opens on the ShifAI sign-in screen. Create an account, verify your email if requested, then sign in. Use **Forgot password?** to request a reset link. An authenticated user is taken to the dashboard.
+
+DevicePreview appears beside the app in debug mode. Use its controls to select an Android model, change orientation, and adjust simulated device settings. It is disabled in release builds.
+
+> **No Supabase configuration yet?** You can still open and inspect the sign-in and account-creation screens. Submitting a form will show a configuration error; the app does not fake sign-in, create an account, or silently switch to a local-only dashboard.
+
+## Supabase setup (one time per Supabase project)
+
+ShifAI requires your own Supabase project for real authentication and cloud sync.
+
+1. Create a project at [Supabase](https://supabase.com/).
+2. Set up the database schema:
+   - Open the project's **SQL Editor** and create a new query.
+   - Open [`supabase/migrations/202606010001_initial_schema.sql`](supabase/migrations/202606010001_initial_schema.sql), copy its contents into the SQL Editor, and run it **once**.
+   - This migration creates the profile, lab-report, user-preference, and coaching-completion tables. It enables RLS and adds policies that restrict user data to the authenticated user's `auth.uid()`.
+3. Configure authentication:
+   - In **Authentication → Providers**, enable email/password sign-up.
+   - Configure email verification to match your needs. When verification is required, use the verification link sent to the email address before signing in.
+   - In **Authentication → URL Configuration → Redirect URLs**, allow `http://localhost:5000` for the Chrome command in this guide. Also add your production HTTPS origin when deploying, and `com.shifai.shifai://login-callback/` for native Android/iOS authentication. If you run Chrome on another port, allow that exact origin instead.
+4. Get the two client values:
+   - In **Project Settings → API** (or **API Keys**), copy the **Project URL** and the **publishable key**. A legacy `anon` key can also be used.
+   - Use the Project URL as `SUPABASE_URL` and the publishable/anon key as `SUPABASE_PUBLISHABLE_KEY` in the run command above.
+   - Replace `YOUR_PROJECT_ID` and `YOUR_PUBLISHABLE_KEY`; do not include angle brackets or quotes.
+
+The two `--dart-define` values are read at build time. Restart the app whenever you change them. For a web release build, use:
+
+```powershell
+flutter build web --release --dart-define=SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+```
+
+The publishable/anon key is intended for client apps. **Never use or publish a Supabase `service_role` or secret key in Flutter, GitHub, or build commands.** RLS must remain enabled; a client key does not replace database access policies.
+
+For browser-based password reset and email verification, Supabase must allow the app's current web origin. The Chrome command above uses `http://localhost:5000`. For production, configure the corresponding HTTPS origin in Supabase and deploy the web build over HTTPS.
 
 ## Risk model
 
-`ml/train_risk_model.py` downloads public NHANES 2013-2018 files from the CDC, keeps adults with fasting glucose and insulin (excluding pregnancy and diagnosed diabetes), and trains a logistic regression to predict HOMA-IR >= 2.9 from age, sex, BMI and waist-to-height ratio. The weights are exported to `assets/ml/risk_model.json` and evaluated in Dart (`lib/services/risk_model.dart`); a test checks the Dart output matches scikit-learn.
+`ml/train_risk_model.py` downloads public NHANES 2013-2018 files from the CDC, keeps adults with fasting glucose and insulin (excluding pregnancy and diagnosed diabetes), and trains a logistic regression to predict HOMA-IR >= 2.9 from age, sex, BMI and waist-to-height ratio. The weights are exported to `assets/ml/risk_model.json` and evaluated in Dart (`lib/services/risk_model.dart`); a test checks that the Dart output matches scikit-learn.
 
-```bash
+```powershell
 pip install -r ml/requirements.txt
 python ml/train_risk_model.py
 ```
 
-Honest limits: it is trained on a US population and may be less accurate elsewhere, it only slightly beats BMI alone (AUC 0.81 vs 0.80), and it estimates a proxy (HOMA-IR) rather than diagnosing anything.
+`ml/compare_models.py` compares logistic regression, gradient boosting and a small neural network on the same data, with and without routine lab values (no insulin needed). Results are written to `ml/benchmark_results.json`.
+
+Honest limits: the data is from a US population and may be less accurate elsewhere, the label (HOMA-IR >= 2.9) is a proxy and not a diagnosis, and there is no external validation.
+
+## Run automated checks
+
+From the project folder:
+
+```powershell
+flutter analyze
+flutter test
+flutter build web --debug
+```
+
+## Data, privacy, and platform limitations
+
+- Lab records are cached locally using AES-GCM encryption; encryption keys and Supabase auth session values use platform secure storage. Browser secure storage requires a secure context; localhost and HTTPS provide one.
+- Offline changes sync when connectivity returns. Existing local-only records can be imported from the signed-in profile screen after reviewing the import prompt.
+- Chrome does not support this project's native Google ML Kit OCR or native camera/gallery scan workflow. The web scan entry provides manual lab entry instead; it does not claim to scan an image.
+- Android/iOS scanning uses the device camera or image gallery and processes OCR on-device. Report images are not uploaded. PDF OCR and a flashlight/torch control are not implemented.
+- Account deletion is not provided in the client; a production deletion flow should use a suitably authorized server-side function.
+- The sign-up privacy and health-use notices are starter disclosures and should be reviewed for your jurisdiction before public release.
+- ShifAI does not claim end-to-end encryption and does not diagnose a medical condition. Review results and treatment decisions with a healthcare professional.
 
 ## Disclaimer
 
-ShifAI is a risk-awareness and early-screening tool, not a diagnostic device. Always confirm results with a doctor.
+ShifAI is an early-awareness tool, not a diagnostic device or a substitute for professional medical care. Always confirm results and treatment decisions with a healthcare professional.

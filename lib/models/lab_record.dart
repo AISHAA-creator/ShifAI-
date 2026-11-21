@@ -9,6 +9,9 @@ class LabRecord {
   final double? fastingInsulinUiuml; // stored normalized to µIU/mL
   final double? hba1cPercent;
   final String? notes;
+  final List<LabMarker> otherMarkers;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
 
   LabRecord({
     required this.id,
@@ -17,7 +20,10 @@ class LabRecord {
     this.fastingInsulinUiuml,
     this.hba1cPercent,
     this.notes,
-  });
+    this.otherMarkers = const [],
+    DateTime? updatedAt,
+    this.deletedAt,
+  }) : updatedAt = updatedAt ?? DateTime.now();
 
   /// HOMA-IR = (fasting glucose [mg/dL] x fasting insulin [µIU/mL]) / 405
   /// Standard formula (Matthews et al., 1985), valid when glucose is in mg/dL.
@@ -37,22 +43,85 @@ class LabRecord {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'date': date.toIso8601String(),
-        'fastingGlucoseMgdl': fastingGlucoseMgdl,
-        'fastingInsulinUiuml': fastingInsulinUiuml,
-        'hba1cPercent': hba1cPercent,
-        'notes': notes,
-      };
+    'id': id,
+    'date': date.toIso8601String(),
+    'fastingGlucoseMgdl': fastingGlucoseMgdl,
+    'fastingInsulinUiuml': fastingInsulinUiuml,
+    'hba1cPercent': hba1cPercent,
+    'notes': notes,
+    'otherMarkers': otherMarkers.map((marker) => marker.toJson()).toList(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
-  factory LabRecord.fromJson(Map<String, dynamic> json) => LabRecord(
-        id: json['id'] as String,
-        date: DateTime.parse(json['date'] as String),
-        fastingGlucoseMgdl: (json['fastingGlucoseMgdl'] as num?)?.toDouble(),
-        fastingInsulinUiuml: (json['fastingInsulinUiuml'] as num?)?.toDouble(),
-        hba1cPercent: (json['hba1cPercent'] as num?)?.toDouble(),
-        notes: json['notes'] as String?,
-      );
+  factory LabRecord.fromJson(Map<String, dynamic> json) {
+    final date = DateTime.parse(json['date'] as String);
+    final rawMarkers = json['otherMarkers'] as List<dynamic>? ?? const [];
+    return LabRecord(
+      id: json['id'] as String,
+      date: date,
+      fastingGlucoseMgdl: (json['fastingGlucoseMgdl'] as num?)?.toDouble(),
+      fastingInsulinUiuml: (json['fastingInsulinUiuml'] as num?)?.toDouble(),
+      hba1cPercent: (json['hba1cPercent'] as num?)?.toDouble(),
+      notes: json['notes'] as String?,
+      otherMarkers: rawMarkers
+          .map((marker) => LabMarker.fromJson(marker as Map<String, dynamic>))
+          .toList(),
+      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? date,
+      deletedAt: DateTime.tryParse(json['deletedAt'] as String? ?? ''),
+    );
+  }
+
+  Map<String, dynamic> toCloudJson(String userId) => {
+    'id': id,
+    'user_id': userId,
+    'report_date': date.toIso8601String().substring(0, 10),
+    'fasting_glucose_mg_dl': fastingGlucoseMgdl,
+    'fasting_insulin_uiu_ml': fastingInsulinUiuml,
+    'hba1c_percent': hba1cPercent,
+    'other_markers': otherMarkers.map((marker) => marker.toJson()).toList(),
+    'notes': notes,
+    'updated_at': updatedAt.toUtc().toIso8601String(),
+    'deleted_at': deletedAt?.toUtc().toIso8601String(),
+  };
+
+  factory LabRecord.fromCloudJson(Map<String, dynamic> json) {
+    final date = DateTime.parse(json['report_date'] as String);
+    final rawMarkers = json['other_markers'] as List<dynamic>? ?? const [];
+    return LabRecord(
+      id: json['id'] as String,
+      date: date,
+      fastingGlucoseMgdl: (json['fasting_glucose_mg_dl'] as num?)?.toDouble(),
+      fastingInsulinUiuml: (json['fasting_insulin_uiu_ml'] as num?)?.toDouble(),
+      hba1cPercent: (json['hba1c_percent'] as num?)?.toDouble(),
+      otherMarkers: rawMarkers
+          .map((marker) => LabMarker.fromJson(marker as Map<String, dynamic>))
+          .toList(),
+      notes: json['notes'] as String?,
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? date,
+      deletedAt: DateTime.tryParse(json['deleted_at'] as String? ?? ''),
+    );
+  }
+}
+
+class LabMarker {
+  const LabMarker({
+    required this.name,
+    required this.value,
+    required this.unit,
+  });
+
+  final String name;
+  final double value;
+  final String unit;
+
+  Map<String, dynamic> toJson() => {'name': name, 'value': value, 'unit': unit};
+
+  factory LabMarker.fromJson(Map<String, dynamic> json) => LabMarker(
+    name: json['name'] as String,
+    value: (json['value'] as num).toDouble(),
+    unit: json['unit'] as String,
+  );
 }
 
 enum HomaIrBand { optimal, normal, earlyResistance, significantResistance }
