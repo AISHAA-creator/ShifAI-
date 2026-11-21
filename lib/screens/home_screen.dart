@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../utils/open_add_result.dart';
 import '../utils/platform_helper.dart';
 import '../widgets/band_style.dart';
+import '../widgets/risk_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -54,6 +55,8 @@ class HomeScreen extends StatelessWidget {
                 const Text('Your metabolic snapshot',
                     style: TextStyle(color: AppColors.gray)),
                 const SizedBox(height: 18),
+                const RiskCard(),
+                const SizedBox(height: 16),
                 withHoma.isEmpty
                     ? const _WelcomeCard()
                     : _HomaCard(records: withHoma),

@@ -10,6 +10,7 @@ Roughly one in three adults has insulin resistance or prediabetes, and most don'
 
 ## Current features (MVP)
 
+- **Risk estimate with no blood test** — enter age, sex, height, weight and waist; a logistic-regression model trained on US NHANES data (6,235 adults, held-out AUC 0.81) estimates the chance that your HOMA-IR is 2.9 or higher. It runs entirely on-device. See [`ml/`](ml/train_risk_model.py) for how it was trained
 - **Dashboard** — latest HOMA-IR with its band (Optimal / Normal / Borderline / Insulin resistance likely), a sparkline of the last five tests, and two daily micro-coaching tips you can tick off
 - **Two-step scan flow** — photograph a printed lab report (glucose, insulin, HbA1c); on-device OCR (Google ML Kit) reads the values in English or French lab terminology, then you review and confirm them before anything is saved
 - **HOMA-IR calculation** — computed from fasting glucose + insulin, with unit conversion (mg/dL, mmol/L, g/L for glucose; µIU/mL, pmol/L for insulin)
@@ -45,7 +46,17 @@ Camera-based OCR is Android/iOS only (Google ML Kit has no web or desktop implem
 - [ ] Post-meal walk nudges (wearable step data via HealthKit / Health Connect)
 - [ ] Food guidance tied to logged patterns
 - [ ] WhatsApp caretaker/family alerts
-- [ ] NHANES-trained risk score for users with no lab data yet
+
+## Risk model
+
+`ml/train_risk_model.py` downloads public NHANES 2013-2018 files from the CDC, keeps adults with fasting glucose and insulin (excluding pregnancy and diagnosed diabetes), and trains a logistic regression to predict HOMA-IR >= 2.9 from age, sex, BMI and waist-to-height ratio. The weights are exported to `assets/ml/risk_model.json` and evaluated in Dart (`lib/services/risk_model.dart`); a test checks the Dart output matches scikit-learn.
+
+```bash
+pip install -r ml/requirements.txt
+python ml/train_risk_model.py
+```
+
+Honest limits: it is trained on a US population and may be less accurate elsewhere, it only slightly beats BMI alone (AUC 0.81 vs 0.80), and it estimates a proxy (HOMA-IR) rather than diagnosing anything.
 
 ## Disclaimer
 

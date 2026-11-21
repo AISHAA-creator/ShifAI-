@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 import '../theme/app_colors.dart';
+import 'profile_form_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -26,11 +29,13 @@ class ProfileScreen extends StatelessWidget {
                     fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.navy)),
           ),
           SizedBox(height: 22),
+          _MeasurementsCard(),
+          SizedBox(height: 10),
           _InfoCard(
             icon: Icons.lock_outline,
             title: 'Private and on-device',
-            text: 'Your results are stored only on this device. Nothing is '
-                'uploaded unless you choose to share a summary.',
+            text: 'Your results and measurements are stored only on this device. '
+                'Nothing is uploaded unless you choose to share a summary.',
           ),
           SizedBox(height: 10),
           _InfoCard(
@@ -47,6 +52,72 @@ class ProfileScreen extends StatelessWidget {
                 'confirm results with your doctor.',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MeasurementsCard extends StatelessWidget {
+  const _MeasurementsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<ProfileProvider>();
+    final p = provider.profile;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.pastel,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.straighten_rounded, color: AppColors.buttonBlue),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Text('Your measurements',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, color: AppColors.navy, fontSize: 15)),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProfileFormScreen()),
+                  ),
+                  child: Text(p == null ? 'Add' : 'Edit'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (p == null)
+              const Text(
+                'Add your age, height, weight and waist to get an insulin '
+                'resistance risk estimate. No blood test needed.',
+                style: TextStyle(color: AppColors.gray, height: 1.35, fontSize: 13.5),
+              )
+            else ...[
+              Text(
+                '${p.female ? 'Female' : 'Male'}, ${p.age} years  •  '
+                '${p.heightCm.toStringAsFixed(0)} cm  •  ${p.weightKg.toStringAsFixed(0)} kg  •  '
+                'waist ${p.waistCm.toStringAsFixed(0)} cm',
+                style: const TextStyle(color: AppColors.text, height: 1.4, fontSize: 13.5),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'BMI ${p.bmi.toStringAsFixed(1)}  •  waist-to-height ${p.waistToHeight.toStringAsFixed(2)}',
+                style: const TextStyle(color: AppColors.gray, fontSize: 13),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

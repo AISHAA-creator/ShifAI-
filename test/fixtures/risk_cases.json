@@ -1,0 +1,37 @@
+[
+  {
+    "age": 25,
+    "female": 0,
+    "bmi": 22.0,
+    "whtr": 0.45,
+    "probability": 0.11857606677382432
+  },
+  {
+    "age": 45,
+    "female": 1,
+    "bmi": 27.5,
+    "whtr": 0.55,
+    "probability": 0.2094729860074693
+  },
+  {
+    "age": 60,
+    "female": 0,
+    "bmi": 31.0,
+    "whtr": 0.64,
+    "probability": 0.5538963095829779
+  },
+  {
+    "age": 35,
+    "female": 1,
+    "bmi": 34.0,
+    "whtr": 0.62,
+    "probability": 0.456645586380815
+  },
+  {
+    "age": 70,
+    "female": 1,
+    "bmi": 24.0,
+    "whtr": 0.52,
+    "probability": 0.11976862491498468
+  }
+]

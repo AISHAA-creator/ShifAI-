@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# NHANES downloads used to train the risk model
+ml/data/

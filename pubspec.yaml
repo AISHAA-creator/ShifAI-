@@ -93,6 +93,7 @@ flutter:
 
   assets:
     - assets/images/shifai_logo.png
+    - assets/ml/risk_model.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

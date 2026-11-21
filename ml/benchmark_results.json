@@ -1,0 +1,120 @@
+{
+  "n": 5925,
+  "prevalence": 0.3698,
+  "cutoff": 2.9,
+  "sets": {
+    "body": {
+      "features": [
+        "age",
+        "female",
+        "bmi",
+        "whtr"
+      ],
+      "models": {
+        "logreg": {
+          "auc": 0.8052,
+          "auc_sd": 0.0159,
+          "brier": 0.1717,
+          "calibration_error": 0.0353
+        },
+        "gboost": {
+          "auc": 0.8042,
+          "auc_sd": 0.0145,
+          "brier": 0.1713,
+          "calibration_error": 0.0321
+        },
+        "mlp": {
+          "auc": 0.8053,
+          "auc_sd": 0.0158,
+          "brier": 0.171,
+          "calibration_error": 0.0348
+        },
+        "ensemble": {
+          "auc": 0.8074,
+          "auc_sd": 0.0157,
+          "brier": 0.1701,
+          "calibration_error": 0.0335
+        }
+      }
+    },
+    "labs": {
+      "features": [
+        "age",
+        "female",
+        "bmi",
+        "whtr",
+        "glucose",
+        "hba1c",
+        "trig",
+        "hdl",
+        "sbp",
+        "dbp"
+      ],
+      "models": {
+        "logreg": {
+          "auc": 0.8659,
+          "auc_sd": 0.0105,
+          "brier": 0.1418,
+          "calibration_error": 0.0273
+        },
+        "gboost": {
+          "auc": 0.8738,
+          "auc_sd": 0.0108,
+          "brier": 0.1373,
+          "calibration_error": 0.0294
+        },
+        "mlp": {
+          "auc": 0.8684,
+          "auc_sd": 0.0096,
+          "brier": 0.1402,
+          "calibration_error": 0.0276
+        },
+        "ensemble": {
+          "auc": 0.8736,
+          "auc_sd": 0.0099,
+          "brier": 0.1374,
+          "calibration_error": 0.0294
+        }
+      }
+    },
+    "labs_noglu": {
+      "features": [
+        "age",
+        "female",
+        "bmi",
+        "whtr",
+        "hba1c",
+        "trig",
+        "hdl",
+        "sbp",
+        "dbp"
+      ],
+      "models": {
+        "logreg": {
+          "auc": 0.8388,
+          "auc_sd": 0.0115,
+          "brier": 0.1552,
+          "calibration_error": 0.0323
+        },
+        "gboost": {
+          "auc": 0.8475,
+          "auc_sd": 0.0136,
+          "brier": 0.1508,
+          "calibration_error": 0.0279
+        },
+        "mlp": {
+          "auc": 0.8433,
+          "auc_sd": 0.0143,
+          "brier": 0.1526,
+          "calibration_error": 0.0263
+        },
+        "ensemble": {
+          "auc": 0.8476,
+          "auc_sd": 0.0131,
+          "brier": 0.1505,
+          "calibration_error": 0.0269
+        }
+      }
+    }
+  }
+}
