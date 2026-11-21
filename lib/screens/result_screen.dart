@@ -196,7 +196,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                       ),
                                       const SizedBox(height: 10),
                                       Text(
-                                        'Chance that your HOMA-IR is 2.9 or '
+                                        'Chance that your HOMA-IR is 2.5 or '
                                         'higher, without an insulin test.',
                                         style: DS.text(
                                           size: 13.5,

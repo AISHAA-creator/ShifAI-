@@ -1,6 +1,6 @@
 """Train the ShifAI insulin-resistance models on public NHANES data (CDC).
 
-Label     HOMA-IR >= 2.9 (the app's "Insulin resistance likely" band)
+Label     HOMA-IR >= 2.5 (the app's "Insulin resistance likely" band)
 People    adults 18+, fasting subsample, not pregnant, no diagnosed diabetes
 
 Two sets go into the app, each trained as two models whose probabilities are
@@ -51,7 +51,7 @@ RESULTS_OUT = Path(__file__).resolve().parent / "model_results.json"
 
 CYCLES = {"H": "2013", "I": "2015", "J": "2017"}
 URL = "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/{year}/DataFiles/{name}_{suffix}.xpt"
-HOMA_CUTOFF = 2.9
+HOMA_CUTOFF = 2.5
 SEED = 42
 
 BASIC = ["age", "female", "bmi", "whtr"]

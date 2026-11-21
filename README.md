@@ -15,7 +15,7 @@ The name comes from the Arabic شفاء (*shifa*, “healing”), with **AI** in
 - Explicit, repeat-safe import of existing local-only records into a signed-in account. Records are not silently assigned to an account.
 - DevicePreview in debug builds, with selectable simulated Android devices and dimensions.
 - Original ShifAI branding and logo at `assets/images/shifai_logo.png`.
-- Risk estimate without a blood test: enter age, sex, height, weight and waist, and an on-device logistic-regression model (trained on US NHANES data) estimates the chance that HOMA-IR is 2.9 or higher. See [Risk model](#risk-model).
+- Risk estimate without a blood test: enter age, sex, height, weight and waist, and an on-device logistic-regression model (trained on US NHANES data) estimates the chance that HOMA-IR is 2.5 or higher. See [Risk model](#risk-model).
 
 ## First-time setup: run in Chrome
 
@@ -107,14 +107,18 @@ For browser-based password reset and email verification, Supabase must allow the
 
 ## Risk model
 
-`ml/train_models.py` downloads public NHANES 2013-2018 files from the CDC, keeps adults with fasting glucose and insulin (excluding pregnancy and diagnosed diabetes), and trains models that predict HOMA-IR >= 2.9. Each input set is a logistic regression plus a small neural network (two hidden layers) whose probabilities are averaged. The weights are exported to `assets/ml/risk_model.json` and evaluated in Dart (`lib/services/risk_model.dart`); a test checks that the Dart output matches scikit-learn to six decimals.
+`ml/train_models.py` downloads public NHANES 2013-2018 files from the CDC, keeps adults with fasting glucose and insulin (excluding pregnancy and diagnosed diabetes), and trains models that predict HOMA-IR >= 2.5. Each input set is a logistic regression plus a small neural network (two hidden layers) whose probabilities are averaged. The weights are exported to `assets/ml/risk_model.json` and evaluated in Dart (`lib/services/risk_model.dart`); a test checks that the Dart output matches scikit-learn to six decimals.
 
 | Input set | Used when | Cross-validated AUC (average of both models) |
 | --- | --- | --- |
-| `basic`: age, sex, BMI, waist-to-height | no blood test | 0.805 |
-| `lab`: basic + fasting glucose, HbA1c, triglycerides, HDL | blood values but no insulin value | 0.874 |
+| `basic`: age, sex, BMI, waist-to-height | no blood test | 0.802 |
+| `lab`: basic + fasting glucose, HbA1c, triglycerides, HDL | blood values but no insulin value | 0.869 |
 
 Asking about family history and weekly activity did not improve either set on the same people, so they are not model inputs. Full numbers: `ml/model_results.json`.
+
+**The cut-off.** There is no universal HOMA-IR threshold: published cut-offs differ by population (a 2025 meta-analysis of 87 studies, and a Qatar Biobank study that derived a lower cut-off for a Middle Eastern population). The app uses **2.5** for "insulin resistance likely": it is close to the local laboratory's own flags (upper normal 2.25, "important" above 2.4), it favours sensitivity as a screening tool should, and the models' accuracy barely changes with the cut-off (tested at 2.5 and 2.9). Bands: below 1.0 optimal, below 1.9 normal, below 2.5 borderline, 2.5 and above likely. This is a screening threshold, not a diagnosis.
+
+**Newer-data check.** `ml/validate_2021_2023.py` trains on 2013-2018 and tests on the 2021-2023 round (never seen in training). At a 2.5 cut-off: `basic` 0.816 AUC, `lab` 0.884 AUC, with predicted risk within about one point of the real share. XGBoost with 12 inputs (see the `shifai_model` branch) scored 0.815 on the same round: no gain over the 4-input model. Results: `ml/validation_2021_2023.json`.
 
 ```powershell
 pip install -r ml/requirements.txt
@@ -123,7 +127,7 @@ python ml/train_models.py
 
 `ml/compare_models.py` is an earlier exploration that also compares gradient boosting.
 
-Honest limits: the data is from a US population and may be less accurate elsewhere, the label (HOMA-IR >= 2.9) is a proxy and not a diagnosis, glucose is part of the HOMA-IR formula (so the `lab` set partly rebuilds it, and the model is still useful because it needs no insulin value), and there is no external validation yet.
+Honest limits: the data is from a US population and may be less accurate elsewhere, the label (HOMA-IR >= 2.5) is a proxy and not a diagnosis, glucose is part of the HOMA-IR formula (so the `lab` set partly rebuilds it, and the model is still useful because it needs no insulin value), and there is no external validation yet.
 
 ### Database
 

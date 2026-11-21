@@ -45,7 +45,7 @@ class LabRecord {
     if (value == null) return null;
     if (value < 1.0) return HomaIrBand.optimal;
     if (value < 1.9) return HomaIrBand.normal;
-    if (value < 2.9) return HomaIrBand.earlyResistance;
+    if (value < 2.5) return HomaIrBand.earlyResistance;
     return HomaIrBand.significantResistance;
   }
 

@@ -1,132 +1,132 @@
 {
   "n": 6080,
-  "prevalence": 0.3689,
-  "cutoff": 2.9,
+  "prevalence": 0.4474,
+  "cutoff": 2.5,
   "cv_folds": 5,
   "sets": {
     "basic": {
       "lr": {
-        "auc": 0.8046,
-        "auc_sd": 0.0078,
-        "brier": 0.1715,
-        "calibration_error": 0.0346
+        "auc": 0.8011,
+        "auc_sd": 0.0184,
+        "brier": 0.181,
+        "calibration_error": 0.039
       },
       "mlp": {
-        "auc": 0.8044,
-        "auc_sd": 0.0072,
-        "brier": 0.1718,
-        "calibration_error": 0.0323
+        "auc": 0.8018,
+        "auc_sd": 0.0174,
+        "brier": 0.1803,
+        "calibration_error": 0.0339
       },
       "both": {
-        "auc": 0.8054,
-        "auc_sd": 0.0077,
-        "brier": 0.1709,
-        "calibration_error": 0.0297
+        "auc": 0.8021,
+        "auc_sd": 0.0178,
+        "brier": 0.1802,
+        "calibration_error": 0.0327
       },
       "n": 6080
     },
     "lab": {
       "lr": {
-        "auc": 0.8681,
-        "auc_sd": 0.0042,
-        "brier": 0.1404,
-        "calibration_error": 0.0239
+        "auc": 0.8639,
+        "auc_sd": 0.0106,
+        "brier": 0.149,
+        "calibration_error": 0.0282
       },
       "mlp": {
-        "auc": 0.8757,
-        "auc_sd": 0.0032,
-        "brier": 0.1361,
-        "calibration_error": 0.0248
+        "auc": 0.8688,
+        "auc_sd": 0.0128,
+        "brier": 0.1459,
+        "calibration_error": 0.0268
       },
       "both": {
-        "auc": 0.8743,
-        "auc_sd": 0.0035,
-        "brier": 0.1367,
-        "calibration_error": 0.024
+        "auc": 0.8687,
+        "auc_sd": 0.0112,
+        "brier": 0.1461,
+        "calibration_error": 0.0227
       },
       "n": 6080
     },
     "basic_same_people": {
       "lr": {
-        "auc": 0.8114,
-        "auc_sd": 0.0085,
-        "brier": 0.1691,
-        "calibration_error": 0.0351
+        "auc": 0.8089,
+        "auc_sd": 0.016,
+        "brier": 0.1778,
+        "calibration_error": 0.033
       },
       "mlp": {
-        "auc": 0.8102,
-        "auc_sd": 0.0078,
-        "brier": 0.1701,
-        "calibration_error": 0.0374
+        "auc": 0.8068,
+        "auc_sd": 0.0164,
+        "brier": 0.1789,
+        "calibration_error": 0.0359
       },
       "both": {
-        "auc": 0.8117,
-        "auc_sd": 0.0084,
-        "brier": 0.1688,
-        "calibration_error": 0.0337
+        "auc": 0.8092,
+        "auc_sd": 0.0159,
+        "brier": 0.1771,
+        "calibration_error": 0.0341
       },
       "n": 4867
     },
     "basic_plus_questions": {
       "lr": {
-        "auc": 0.8124,
-        "auc_sd": 0.0092,
-        "brier": 0.1686,
-        "calibration_error": 0.0345
+        "auc": 0.8091,
+        "auc_sd": 0.0154,
+        "brier": 0.1776,
+        "calibration_error": 0.038
       },
       "mlp": {
-        "auc": 0.7993,
-        "auc_sd": 0.0097,
-        "brier": 0.1764,
-        "calibration_error": 0.0599
+        "auc": 0.8039,
+        "auc_sd": 0.0139,
+        "brier": 0.18,
+        "calibration_error": 0.032
       },
       "both": {
-        "auc": 0.809,
-        "auc_sd": 0.0086,
-        "brier": 0.1709,
-        "calibration_error": 0.0435
+        "auc": 0.8076,
+        "auc_sd": 0.0147,
+        "brier": 0.1782,
+        "calibration_error": 0.0333
       },
       "n": 4867
     },
     "lab_same_people": {
       "lr": {
-        "auc": 0.8754,
-        "auc_sd": 0.012,
-        "brier": 0.1373,
-        "calibration_error": 0.034
+        "auc": 0.8726,
+        "auc_sd": 0.014,
+        "brier": 0.1442,
+        "calibration_error": 0.0329
       },
       "mlp": {
-        "auc": 0.8797,
-        "auc_sd": 0.0145,
-        "brier": 0.1341,
-        "calibration_error": 0.0287
+        "auc": 0.8761,
+        "auc_sd": 0.0143,
+        "brier": 0.1417,
+        "calibration_error": 0.0242
       },
       "both": {
-        "auc": 0.8794,
-        "auc_sd": 0.0137,
-        "brier": 0.1344,
-        "calibration_error": 0.0292
+        "auc": 0.8764,
+        "auc_sd": 0.014,
+        "brier": 0.1416,
+        "calibration_error": 0.0309
       },
       "n": 4867
     },
     "lab_plus_questions": {
       "lr": {
-        "auc": 0.8754,
-        "auc_sd": 0.0125,
-        "brier": 0.1373,
-        "calibration_error": 0.0364
+        "auc": 0.8723,
+        "auc_sd": 0.0141,
+        "brier": 0.1444,
+        "calibration_error": 0.0333
       },
       "mlp": {
-        "auc": 0.8776,
-        "auc_sd": 0.015,
-        "brier": 0.1353,
-        "calibration_error": 0.0291
+        "auc": 0.873,
+        "auc_sd": 0.014,
+        "brier": 0.1435,
+        "calibration_error": 0.0271
       },
       "both": {
-        "auc": 0.8783,
-        "auc_sd": 0.0139,
-        "brier": 0.135,
-        "calibration_error": 0.0322
+        "auc": 0.8743,
+        "auc_sd": 0.0137,
+        "brier": 0.143,
+        "calibration_error": 0.0325
       },
       "n": 4867
     }

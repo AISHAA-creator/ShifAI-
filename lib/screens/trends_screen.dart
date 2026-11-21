@@ -358,8 +358,8 @@ class _NoHomaCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               reasons.isEmpty
-                  ? 'Chance that your HOMA-IR is 2.9 or higher.'
-                  : 'Chance that your HOMA-IR is 2.9 or higher. Mainly because '
+                  ? 'Chance that your HOMA-IR is 2.5 or higher.'
+                  : 'Chance that your HOMA-IR is 2.5 or higher. Mainly because '
                         'of: ${reasons.map((f) => f.label.toLowerCase()).join(', ')}.',
               style: DS.text(
                 size: 14,
@@ -481,8 +481,8 @@ class _ScoreCard extends StatelessWidget {
                           for (final seg in const [
                             (100, Color(0xFFBFE6D3)),
                             (90, Color(0xFFD4EEE0)),
-                            (100, Color(0xFFFFE2A6)),
-                            (160, Color(0xFFF7C3C9)),
+                            (60, Color(0xFFFFE2A6)),
+                            (200, Color(0xFFF7C3C9)),
                           ]) ...[
                             Expanded(
                               flex: seg.$1,
@@ -494,7 +494,7 @@ class _ScoreCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (seg.$1 != 160) const SizedBox(width: 3),
+                            if (seg.$1 != 200) const SizedBox(width: 3),
                           ],
                         ],
                       ),
@@ -539,7 +539,7 @@ class _ScoreCard extends StatelessWidget {
                         for (final mark in const [
                           ('1.0', 1.0),
                           ('1.9', 1.9),
-                          ('2.9', 2.9),
+                          ('2.5', 2.5),
                         ])
                           Positioned(
                             left: (mark.$2 / _max) * c.maxWidth - 10,

@@ -39,7 +39,7 @@ class RiskFactor {
 }
 
 class RiskAssessment {
-  /// Estimated chance (0..1) that this person's HOMA-IR is 2.9 or higher.
+  /// Estimated chance (0..1) that this person's HOMA-IR is 2.5 or higher.
   final double probability;
   final RiskBasis basis;
 
