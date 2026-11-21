@@ -18,18 +18,18 @@ class UserProfile {
   double get waistToHeight => waistCm / heightCm;
 
   Map<String, dynamic> toJson() => {
-        'age': age,
-        'female': female,
-        'heightCm': heightCm,
-        'weightKg': weightKg,
-        'waistCm': waistCm,
-      };
+    'age': age,
+    'female': female,
+    'heightCm': heightCm,
+    'weightKg': weightKg,
+    'waistCm': waistCm,
+  };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-        age: (json['age'] as num).toInt(),
-        female: json['female'] as bool,
-        heightCm: (json['heightCm'] as num).toDouble(),
-        weightKg: (json['weightKg'] as num).toDouble(),
-        waistCm: (json['waistCm'] as num).toDouble(),
-      );
+    age: (json['age'] as num).toInt(),
+    female: json['female'] as bool,
+    heightCm: (json['heightCm'] as num).toDouble(),
+    weightKg: (json['weightKg'] as num).toDouble(),
+    waistCm: (json['waistCm'] as num).toDouble(),
+  );
 }

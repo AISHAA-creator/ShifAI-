@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math' as math;
+
 import 'package:flutter/services.dart' show rootBundle;
+
 import '../models/user_profile.dart';
 
 enum RiskBand { low, moderate, high }
@@ -94,11 +96,11 @@ class RiskModel {
   }
 
   RiskAssessment assess(UserProfile p) => RiskAssessment(
-        probability(
-          age: p.age,
-          female: p.female,
-          bmi: p.bmi,
-          whtr: p.waistToHeight,
-        ),
-      );
+    probability(
+      age: p.age,
+      female: p.female,
+      bmi: p.bmi,
+      whtr: p.waistToHeight,
+    ),
+  );
 }

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
 import '../services/risk_model.dart';
 import '../theme/app_colors.dart';
 
@@ -54,7 +56,10 @@ class RiskChip extends StatelessWidget {
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(color: riskColor(band), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: riskColor(band),
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 6),
           Text(
@@ -103,8 +108,10 @@ class RiskGauge extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              const Text('chance',
-                  style: TextStyle(fontSize: 11.5, color: AppColors.gray)),
+              const Text(
+                'chance',
+                style: TextStyle(fontSize: 11.5, color: AppColors.gray),
+              ),
             ],
           ),
         ],

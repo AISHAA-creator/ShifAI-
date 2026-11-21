@@ -30,8 +30,14 @@ void main() {
   });
 
   test('guesses the glucose unit from its size when none is printed', () {
-    expect(LabOcrService.parseText('Glycémie 0.92').glucoseUnit, GlucoseUnit.gl);
-    expect(LabOcrService.parseText('Glucose 5.1').glucoseUnit, GlucoseUnit.mmoll);
+    expect(
+      LabOcrService.parseText('Glycémie 0.92').glucoseUnit,
+      GlucoseUnit.gl,
+    );
+    expect(
+      LabOcrService.parseText('Glucose 5.1').glucoseUnit,
+      GlucoseUnit.mmoll,
+    );
     expect(LabOcrService.parseText('Glucose 92').glucoseUnit, GlucoseUnit.mgdl);
   });
 
@@ -42,7 +48,9 @@ void main() {
   });
 
   test('text without any known test gives no values', () {
-    final r = LabOcrService.parseText('Cholestérol total 1,90 g/L\nCréatinine 8 mg/L');
+    final r = LabOcrService.parseText(
+      'Cholestérol total 1,90 g/L\nCréatinine 8 mg/L',
+    );
     expect(r.hasAnyValue, isFalse);
   });
 

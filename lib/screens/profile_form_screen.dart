@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 import '../theme/app_colors.dart';
@@ -85,21 +86,34 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
               child: const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.lock_outline, color: AppColors.buttonBlue, size: 20),
+                  Icon(
+                    Icons.lock_outline,
+                    color: AppColors.buttonBlue,
+                    size: 20,
+                  ),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'No blood test needed. These stay on your device and are '
                       'only used to estimate your risk.',
-                      style: TextStyle(color: AppColors.text, height: 1.35, fontSize: 13.5),
+                      style: TextStyle(
+                        color: AppColors.text,
+                        height: 1.35,
+                        fontSize: 13.5,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Sex',
-                style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.navy)),
+            const Text(
+              'Sex',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.navy,
+              ),
+            ),
             const SizedBox(height: 8),
             SegmentedButton<bool>(
               segments: const [
@@ -111,7 +125,13 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
               showSelectedIcon: false,
             ),
             const SizedBox(height: 18),
-            _field(_age, 'Age', 'years', (v) => _range(v, 18, 90, 'years'), digitsOnly: true),
+            _field(
+              _age,
+              'Age',
+              'years',
+              (v) => _range(v, 18, 90, 'years'),
+              digitsOnly: true,
+            ),
             const SizedBox(height: 14),
             _field(_height, 'Height', 'cm', (v) => _range(v, 120, 230, 'cm')),
             const SizedBox(height: 14),
@@ -129,8 +149,13 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.buttonBlue,
                 minimumSize: const Size.fromHeight(54),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               child: const Text('Save & see my estimate'),
             ),

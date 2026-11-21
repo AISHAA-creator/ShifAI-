@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 
 /// "1. Scan Sheet  |  2. Review Data" switcher from the Stitch design.

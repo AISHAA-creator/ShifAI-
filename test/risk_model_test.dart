@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shifai/models/user_profile.dart';
 import 'package:shifai/services/risk_model.dart';
@@ -11,8 +12,9 @@ void main() {
   );
 
   test('matches the Python (scikit-learn) model on fixed cases', () {
-    final cases =
-        jsonDecode(File('test/fixtures/risk_cases.json').readAsStringSync()) as List;
+    final cases = jsonDecode(
+      File('test/fixtures/risk_cases.json').readAsStringSync(),
+    ) as List;
     expect(cases, isNotEmpty);
     for (final c in cases) {
       final p = model.probability(

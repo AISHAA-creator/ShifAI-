@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/lab_record.dart';
 import '../theme/app_colors.dart';
 
@@ -76,7 +77,10 @@ class BandChip extends StatelessWidget {
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(color: bandColor(band), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: bandColor(band),
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 6),
           Text(

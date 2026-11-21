@@ -1,5 +1,7 @@
 import 'dart:io';
+
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+
 import '../models/lab_record.dart';
 
 /// Best-effort extraction of glucose / insulin / HbA1c values from a photo
@@ -33,10 +35,11 @@ class LabOcrService {
 
   static final _numberPattern = RegExp(r'(\d+[.,]?\d*)');
 
-  static final _glucosePattern =
-      RegExp(r'glyc[ée]mie|glucose', caseSensitive: false);
-  static final _insulinPattern =
-      RegExp(r'insulin[ei]?', caseSensitive: false);
+  static final _glucosePattern = RegExp(
+    r'glyc[ée]mie|glucose',
+    caseSensitive: false,
+  );
+  static final _insulinPattern = RegExp(r'insulin[ei]?', caseSensitive: false);
   static final _hba1cPattern = RegExp(
     r'hba1c|h[ée]moglobine\s*glyqu[ée]e|hemoglobine glycosylee',
     caseSensitive: false,

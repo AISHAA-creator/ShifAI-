@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import 'lab_entry_form_screen.dart';
 
@@ -19,7 +20,11 @@ class LabScanScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.info_outline, size: 40, color: AppColors.accentBlue),
+              const Icon(
+                Icons.info_outline,
+                size: 40,
+                color: AppColors.accentBlue,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Camera scanning is available on the Android/iOS app. '

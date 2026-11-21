@@ -1,4 +1,6 @@
-import 'platform_helper_stub.dart' if (dart.library.io) 'platform_helper_io.dart' as impl;
+import 'platform_helper_stub.dart'
+    if (dart.library.io) 'platform_helper_io.dart'
+    as impl;
 
 /// True on Android/iOS, false everywhere else (web, desktop).
 /// Camera + on-device OCR (Google ML Kit) only ship native implementations

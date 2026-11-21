@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/profile_provider.dart';
 import '../screens/profile_form_screen.dart';
 import '../theme/app_colors.dart';
@@ -11,9 +12,8 @@ class RiskCard extends StatelessWidget {
   const RiskCard({super.key});
 
   void _openForm(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ProfileFormScreen()),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const ProfileFormScreen()));
   }
 
   @override
@@ -44,7 +44,10 @@ class RiskCard extends StatelessWidget {
                   const Text(
                     'Insulin Resistance Risk',
                     style: TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.navy),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.navy,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   const Text(
@@ -58,7 +61,9 @@ class RiskCard extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.buttonBlue,
                       minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: const Text('Add my measurements'),
                   ),
@@ -86,14 +91,19 @@ class RiskCard extends StatelessWidget {
                             const Text(
                               'Insulin Resistance Risk',
                               style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.navy),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.navy,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             const Text(
                               'Based on waist-to-height ratio, BMI, age and sex.',
-                              style: TextStyle(color: AppColors.gray, height: 1.35, fontSize: 13),
+                              style: TextStyle(
+                                color: AppColors.gray,
+                                height: 1.35,
+                                fontSize: 13,
+                              ),
                             ),
                             const SizedBox(height: 10),
                             RiskChip(band: assessment.band),
@@ -106,7 +116,10 @@ class RiskCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.pastel,
                       borderRadius: BorderRadius.circular(14),
@@ -116,7 +129,10 @@ class RiskCard extends StatelessWidget {
                         const Expanded(
                           child: Text(
                             'Estimated chance that your HOMA-IR is 2.9 or higher.',
-                            style: TextStyle(color: AppColors.text, fontSize: 13),
+                            style: TextStyle(
+                              color: AppColors.text,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                         TextButton(
@@ -132,7 +148,11 @@ class RiskCard extends StatelessWidget {
                       'Trained on ${_thousands(model.trainedOn)} adults from the US NHANES '
                       'health survey. It may be less accurate for other populations. '
                       'A lab test is the real answer.',
-                      style: const TextStyle(color: AppColors.gray, fontSize: 12, height: 1.4),
+                      style: const TextStyle(
+                        color: AppColors.gray,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ],
@@ -143,6 +163,8 @@ class RiskCard extends StatelessWidget {
 
   String _thousands(int n) {
     final s = n.toString();
-    return s.length > 3 ? '${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}' : s;
+    return s.length > 3
+        ? '${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}'
+        : s;
   }
 }

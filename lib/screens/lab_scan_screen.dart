@@ -1,6 +1,8 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../services/lab_ocr_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/step_header.dart';
@@ -46,22 +48,26 @@ class _LabScanScreenState extends State<LabScanScreen> {
       setState(() => _processing = false);
 
       if (!result.hasAnyValue) {
-        setState(() => _error =
-            "Couldn't find glucose, insulin or HbA1c in this photo. Try a "
-            'clearer, well-lit photo, or enter the values manually.');
+        setState(
+          () => _error =
+              "Couldn't find glucose, insulin or HbA1c in this photo. Try a "
+              'clearer, well-lit photo, or enter the values manually.',
+        );
         return;
       }
 
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => LabEntryFormScreen(
-          fromScan: true,
-          initialGlucose: result.glucoseValue,
-          initialGlucoseUnit: result.glucoseUnit,
-          initialInsulin: result.insulinValue,
-          initialInsulinUnit: result.insulinUnit,
-          initialHba1c: result.hba1cPercent,
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => LabEntryFormScreen(
+            fromScan: true,
+            initialGlucose: result.glucoseValue,
+            initialGlucoseUnit: result.glucoseUnit,
+            initialInsulin: result.insulinValue,
+            initialInsulinUnit: result.insulinUnit,
+            initialHba1c: result.hba1cPercent,
+          ),
         ),
-      ));
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -72,9 +78,8 @@ class _LabScanScreenState extends State<LabScanScreen> {
   }
 
   void _enterManually() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const LabEntryFormScreen()),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const LabEntryFormScreen()));
   }
 
   @override
@@ -91,7 +96,10 @@ class _LabScanScreenState extends State<LabScanScreen> {
               Expanded(child: _viewfinder()),
               if (_error != null) ...[
                 const SizedBox(height: 10),
-                Text(_error!, style: const TextStyle(color: AppColors.dangerText)),
+                Text(
+                  _error!,
+                  style: const TextStyle(color: AppColors.dangerText),
+                ),
               ],
               const SizedBox(height: 12),
               Container(
@@ -105,14 +113,21 @@ class _LabScanScreenState extends State<LabScanScreen> {
                     CircleAvatar(
                       radius: 20,
                       backgroundColor: Colors.white,
-                      child: Icon(Icons.lightbulb_outline, color: AppColors.buttonBlue),
+                      child: Icon(
+                        Icons.lightbulb_outline,
+                        color: AppColors.buttonBlue,
+                      ),
                     ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Hold your phone flat above the page. ShifAI reads your '
                         'results on this device — nothing is uploaded.',
-                        style: TextStyle(color: AppColors.text, height: 1.35, fontSize: 13.5),
+                        style: TextStyle(
+                          color: AppColors.text,
+                          height: 1.35,
+                          fontSize: 13.5,
+                        ),
                       ),
                     ),
                   ],
@@ -141,7 +156,10 @@ class _LabScanScreenState extends State<LabScanScreen> {
           children: [
             if (_image != null)
               Positioned.fill(
-                child: Opacity(opacity: 0.85, child: Image.file(_image!, fit: BoxFit.cover)),
+                child: Opacity(
+                  opacity: 0.85,
+                  child: Image.file(_image!, fit: BoxFit.cover),
+                ),
               ),
             Positioned.fill(
               child: Padding(
@@ -154,15 +172,18 @@ class _LabScanScreenState extends State<LabScanScreen> {
               left: 0,
               right: 0,
               child: Center(
-                child: _pill('Processed on your device', icon: Icons.lock_outline),
+                child: _pill(
+                  'Processed on your device',
+                  icon: Icons.lock_outline,
+                ),
               ),
             ),
             Center(
               child: _processing
                   ? const CircularProgressIndicator(color: Colors.white)
                   : (_image == null
-                      ? _pill('Align printed paper in frame')
-                      : const SizedBox.shrink()),
+                        ? _pill('Align printed paper in frame')
+                        : const SizedBox.shrink()),
             ),
             Positioned(
               left: 0,
@@ -171,7 +192,11 @@ class _LabScanScreenState extends State<LabScanScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _roundButton(Icons.edit_note_rounded, 'Enter values manually', _enterManually),
+                  _roundButton(
+                    Icons.edit_note_rounded,
+                    'Enter values manually',
+                    _enterManually,
+                  ),
                   _captureButton(),
                   _roundButton(
                     Icons.photo_library_outlined,
@@ -245,11 +270,21 @@ class _LabScanScreenState extends State<LabScanScreen> {
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 4),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 4,
+            ),
           ),
           child: const DecoratedBox(
-            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-            child: Icon(Icons.camera_alt_outlined, size: 32, color: AppColors.navy),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+            child: Icon(
+              Icons.camera_alt_outlined,
+              size: 32,
+              color: AppColors.navy,
+            ),
           ),
         ),
       ),
