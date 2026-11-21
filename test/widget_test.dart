@@ -20,6 +20,7 @@ import 'package:shifai/providers/settings_provider.dart';
 import 'package:shifai/providers/skin_check_provider.dart';
 import 'package:shifai/screens/app_shell.dart';
 import 'package:shifai/screens/find_doctor_screen.dart';
+import 'package:shifai/screens/lab_entry_form_screen.dart';
 import 'package:shifai/screens/lab_scan_screen.dart';
 import 'package:shifai/screens/medicine_screen.dart';
 import 'package:shifai/screens/result_screen.dart';
@@ -436,5 +437,35 @@ void main() {
     await tester.pumpWidget(_app(ResultScreen(record: record(112, 12.5))));
     await tester.pumpAndSettle();
     expect(find.text('See a doctor about this result'), findsOneWidget);
+  });
+
+  testWidgets('adding and dismissing a lab marker disposes fields safely', (
+    tester,
+  ) async {
+    phone(tester, h: 3200);
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.light(), home: const LabEntryFormScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add another lab value'));
+    await tester.pumpAndSettle();
+    // five value fields come first (glucose, insulin, HbA1c, triglycerides, HDL)
+    await tester.enterText(find.byType(TextFormField).at(5), 'Vitamin D');
+    await tester.enterText(find.byType(TextFormField).at(6), '30');
+    await tester.enterText(find.byType(TextFormField).at(7), 'ng/mL');
+    await tester.tap(find.text('Add marker'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Vitamin D'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Add another lab value'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Vitamin D'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

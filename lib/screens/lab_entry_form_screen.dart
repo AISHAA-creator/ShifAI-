@@ -56,6 +56,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
   late LipidUnit _trigUnit;
   late LipidUnit _hdlUnit;
   DateTime _date = DateTime.now();
+  final List<LabMarker> _otherMarkers = [];
   bool _saving = false;
 
   @override
@@ -133,6 +134,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
           ? null
           : UnitConverter.insulinToUiuml(insulinRaw, _insulinUnit),
       hba1cPercent: hba1cRaw,
+      otherMarkers: List.unmodifiable(_otherMarkers),
       triglyceridesMgdl: trigRaw == null
           ? null
           : UnitConverter.triglyceridesToMgdl(trigRaw, _trigUnit),
@@ -243,6 +245,18 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
         ],
       ),
     );
+  }
+
+  /// Another lab value that has no field of its own (for example vitamin D).
+  Future<void> _addMarker() async {
+    final marker = await showDialog<LabMarker>(
+      context: context,
+      builder: (_) =>
+          _AddMarkerDialog(validateOptionalPositive: _validateOptionalPositive),
+    );
+    if (marker != null && mounted) {
+      setState(() => _otherMarkers.add(marker));
+    }
   }
 
   Widget _valueRow({
@@ -526,6 +540,40 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                           ),
                         ),
                       ),
+                      for (var i = 0; i < _otherMarkers.length; i++) ...[
+                        const SizedBox(height: 10),
+                        DsCard(
+                          radius: 22,
+                          padding: const EdgeInsets.fromLTRB(18, 8, 8, 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${_otherMarkers[i].name}: '
+                                  '${_otherMarkers[i].value} ${_otherMarkers[i].unit}',
+                                  style: DS.text(
+                                    size: 15,
+                                    weight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Remove ${_otherMarkers[i].name}',
+                                onPressed: () =>
+                                    setState(() => _otherMarkers.removeAt(i)),
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  color: DS.iconMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      DsTextAction(
+                        'Add another lab value',
+                        onPressed: _addMarker,
+                      ),
                     ],
                   ),
                 ),
@@ -553,6 +601,95 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AddMarkerDialog extends StatefulWidget {
+  const _AddMarkerDialog({required this.validateOptionalPositive});
+
+  final String? Function(String?, String) validateOptionalPositive;
+
+  @override
+  State<_AddMarkerDialog> createState() => _AddMarkerDialogState();
+}
+
+class _AddMarkerDialogState extends State<_AddMarkerDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _valueController = TextEditingController();
+  final _unitController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _valueController.dispose();
+    _unitController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add lab marker'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Marker name'),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Enter a name.'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _valueController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(labelText: 'Value'),
+              validator: (value) =>
+                  widget.validateOptionalPositive(value, 'numeric') ??
+                  ((double.tryParse((value ?? '').replaceAll(',', '.')) == null)
+                      ? 'Enter a valid value.'
+                      : null),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _unitController,
+              decoration: const InputDecoration(labelText: 'Unit'),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Enter a unit.'
+                  : null,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) return;
+            Navigator.pop(
+              context,
+              LabMarker(
+                name: _nameController.text.trim(),
+                value: double.parse(
+                  _valueController.text.trim().replaceAll(',', '.'),
+                ),
+                unit: _unitController.text.trim(),
+              ),
+            );
+          },
+          child: const Text('Add marker'),
+        ),
+      ],
     );
   }
 }
