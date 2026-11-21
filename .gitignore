@@ -46,3 +46,5 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+# Données NHANES (téléchargées automatiquement par ml/train_xgboost.py)
+ml/data/
