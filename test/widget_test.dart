@@ -8,6 +8,7 @@ import 'package:shifai/providers/coaching_provider.dart';
 import 'package:shifai/providers/lab_records_provider.dart';
 import 'package:shifai/providers/nav_provider.dart';
 import 'package:shifai/screens/app_shell.dart';
+import 'package:shifai/screens/lab_entry_form_screen.dart';
 import 'package:shifai/screens/lab_scan_screen.dart';
 import 'package:shifai/theme/app_theme.dart';
 
@@ -108,6 +109,37 @@ void main() {
 
     expect(find.text('1. Scan Sheet'), findsOneWidget);
     expect(find.text('Align printed paper in frame'), findsOneWidget);
+  });
+
+  testWidgets('adding and dismissing a lab marker disposes fields safely', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: const LabEntryFormScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add Missing Lab Marker'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(4), 'Vitamin D');
+    await tester.enterText(find.byType(TextFormField).at(5), '30');
+    await tester.enterText(find.byType(TextFormField).at(6), 'ng/mL');
+    await tester.tap(find.text('Add marker'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vitamin D'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Add Missing Lab Marker'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vitamin D'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 

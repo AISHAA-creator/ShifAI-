@@ -149,79 +149,12 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
   }
 
   Future<void> _addMarker() async {
-    final nameController = TextEditingController();
-    final valueController = TextEditingController();
-    final unitController = TextEditingController();
-    final markerKey = GlobalKey<FormState>();
-
     final marker = await showDialog<LabMarker>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Add lab marker'),
-        content: Form(
-          key: markerKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Marker name'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter a name.'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: valueController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(labelText: 'Value'),
-                validator: (value) =>
-                    _validateOptionalPositive(value, 'numeric') ??
-                    ((double.tryParse((value ?? '').replaceAll(',', '.')) ==
-                            null)
-                        ? 'Enter a valid value.'
-                        : null),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: unitController,
-                decoration: const InputDecoration(labelText: 'Unit'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter a unit.'
-                    : null,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (!markerKey.currentState!.validate()) return;
-              Navigator.pop(
-                dialogContext,
-                LabMarker(
-                  name: nameController.text.trim(),
-                  value: double.parse(
-                    valueController.text.trim().replaceAll(',', '.'),
-                  ),
-                  unit: unitController.text.trim(),
-                ),
-              );
-            },
-            child: const Text('Add marker'),
-          ),
-        ],
+      builder: (_) => _AddMarkerDialog(
+        validateOptionalPositive: _validateOptionalPositive,
       ),
     );
-    nameController.dispose();
-    valueController.dispose();
-    unitController.dispose();
     if (marker != null && mounted) {
       setState(() => _otherMarkers.add(marker));
     }
@@ -462,6 +395,95 @@ class _LiveHomaCard extends StatelessWidget {
           const Icon(Icons.calculate_outlined, color: AppColors.onPrimary),
         ],
       ),
+    );
+  }
+}
+
+class _AddMarkerDialog extends StatefulWidget {
+  const _AddMarkerDialog({required this.validateOptionalPositive});
+
+  final String? Function(String?, String) validateOptionalPositive;
+
+  @override
+  State<_AddMarkerDialog> createState() => _AddMarkerDialogState();
+}
+
+class _AddMarkerDialogState extends State<_AddMarkerDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _valueController = TextEditingController();
+  final _unitController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _valueController.dispose();
+    _unitController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add lab marker'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Marker name'),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Enter a name.'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _valueController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(labelText: 'Value'),
+              validator: (value) =>
+                  widget.validateOptionalPositive(value, 'numeric') ??
+                  ((double.tryParse((value ?? '').replaceAll(',', '.')) == null)
+                      ? 'Enter a valid value.'
+                      : null),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _unitController,
+              decoration: const InputDecoration(labelText: 'Unit'),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Enter a unit.'
+                  : null,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) return;
+            Navigator.pop(
+              context,
+              LabMarker(
+                name: _nameController.text.trim(),
+                value: double.parse(
+                  _valueController.text.trim().replaceAll(',', '.'),
+                ),
+                unit: _unitController.text.trim(),
+              ),
+            );
+          },
+          child: const Text('Add marker'),
+        ),
+      ],
     );
   }
 }
