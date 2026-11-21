@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../models/lab_record.dart';
+import '../providers/auth_provider.dart';
+import '../providers/coaching_provider.dart';
 import '../providers/lab_records_provider.dart';
 import '../providers/nav_provider.dart';
 import '../theme/app_colors.dart';
@@ -26,6 +28,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final provider = context.watch<LabRecordsProvider>();
     final withHoma = provider.records
         .where((record) => record.homaIr != null)
@@ -48,16 +51,58 @@ class HomeScreen extends StatelessWidget {
                 AppSpacing.xl,
               ),
               children: [
-                Text(
-                  _greeting(),
-                  style: Theme.of(context).textTheme.headlineMedium,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_greeting()}${auth.isSignedIn ? ', ${auth.displayName}' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'أهلاً بك في شفاء',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.lock_outline,
+                            size: 14,
+                            color: AppColors.secondary,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            isMobilePlatform ? 'On-device OCR' : 'Web entry',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: AppColors.secondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Your metabolic snapshot',
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.onSurfaceVariant),
-                ),
+                const SizedBox(height: AppSpacing.lg),
+                _MetabolicAssessmentCard(records: withHoma),
                 const SizedBox(height: AppSpacing.lg),
                 withHoma.isEmpty
                     ? const _WelcomeCard()
@@ -68,7 +113,7 @@ class HomeScreen extends StatelessWidget {
                 const _CoachingSection(),
                 const SizedBox(height: AppSpacing.xl),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  key: const Key('home-storage-footer'),
                   children: [
                     const Icon(
                       Icons.lock_outline,
@@ -76,14 +121,175 @@ class HomeScreen extends StatelessWidget {
                       color: AppColors.onSurfaceVariant,
                     ),
                     const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      'Your health metrics stay on this device.',
-                      style: Theme.of(context).textTheme.bodySmall,
+                    Expanded(
+                      child: Text(
+                        auth.isSignedIn
+                            ? 'Your results sync to your account and stay cached for offline use.'
+                            : 'Your health metrics stay on this device.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _MetabolicAssessmentCard extends StatelessWidget {
+  const _MetabolicAssessmentCard({required this.records});
+
+  final List<LabRecord> records;
+
+  @override
+  Widget build(BuildContext context) {
+    final latest = records.isEmpty ? null : records.last;
+    final value = latest?.homaIr;
+    final band = latest?.homaIrBand;
+    final progress = value == null ? 0.0 : (value / 4.5).clamp(0.0, 1.0);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.circle, size: 10, color: AppColors.secondary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Metabolic Assessment',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainer,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                  child: Text(
+                    'Lab-based',
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: AppColors.secondary),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Insulin resistance indicator',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        value == null
+                            ? 'Add fasting glucose and insulin to calculate your HOMA-IR.'
+                            : 'Based on your latest fasting glucose and insulin values.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (band != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        BandChip(band: band),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                SizedBox(
+                  width: 88,
+                  height: 88,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox.expand(
+                        child: CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 8,
+                          backgroundColor: AppColors.surfaceContainer,
+                          color: band == null
+                              ? AppColors.secondary
+                              : bandColor(band),
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            value?.toStringAsFixed(1) ?? '—',
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(color: AppColors.primary),
+                          ),
+                          Text(
+                            value == null ? 'HOMA-IR' : 'index',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Material(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppRadii.input),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadii.input),
+                onTap: () => context.read<NavProvider>().setTab(1),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.sync,
+                        size: 17,
+                        color: AppColors.secondary,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          value == null
+                              ? 'Your result appears after you add a lab report'
+                              : 'Updated from your confirmed lab results',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      const Text(
+                        'Details  →',
+                        style: TextStyle(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -438,10 +644,9 @@ class _CoachingSectionState extends State<_CoachingSection> {
     ),
   ];
 
-  final Set<int> _done = {};
-
   @override
   Widget build(BuildContext context) {
+    final coaching = context.watch<CoachingProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -493,21 +698,37 @@ class _CoachingSectionState extends State<_CoachingSection> {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   OutlinedButton.icon(
-                    onPressed: () => setState(() {
-                      if (!_done.remove(i)) _done.add(i);
-                    }),
+                    onPressed: () => coaching.toggle(
+                      i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
+                    ),
                     icon: Icon(
-                      _done.contains(i) ? Icons.check_circle : Icons.check,
+                      coaching.isCompleted(
+                            i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
+                          )
+                          ? Icons.check_circle
+                          : Icons.check,
                       size: 18,
                     ),
-                    label: const Text('Done'),
+                    label: Text(
+                      coaching.isCompleted(
+                            i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
+                          )
+                          ? 'Saved'
+                          : 'Done',
+                    ),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 10),
-                      backgroundColor: _done.contains(i)
+                      backgroundColor:
+                          coaching.isCompleted(
+                            i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
+                          )
                           ? AppColors.emerald700
                           : AppColors.surfaceContainer,
-                      foregroundColor: _done.contains(i)
+                      foregroundColor:
+                          coaching.isCompleted(
+                            i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
+                          )
                           ? AppColors.surfaceContainerLowest
                           : AppColors.primary,
                       side: BorderSide.none,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
@@ -14,6 +16,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSignedIn = context.watch<AuthProvider>().isSignedIn;
+    final compactStatus = MediaQuery.sizeOf(context).width < 400;
     return AppBar(
       automaticallyImplyLeading: false,
       titleSpacing: AppSpacing.screenHorizontal,
@@ -56,7 +60,13 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
-                  'On-device',
+                  isSignedIn
+                      ? compactStatus
+                            ? 'Private'
+                            : 'Private account'
+                      : compactStatus
+                      ? 'Local'
+                      : 'Local-only',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppColors.secondary,
                     fontWeight: FontWeight.w600,

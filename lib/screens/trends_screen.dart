@@ -1,13 +1,18 @@
 import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../models/lab_record.dart';
 import '../providers/lab_records_provider.dart';
+import '../providers/nav_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/open_add_result.dart';
+import '../widgets/app_header.dart';
 import '../widgets/band_style.dart';
 
 enum TrendMetric { homaIr, glucose, hba1c, insulin }
@@ -52,7 +57,8 @@ extension TrendMetricX on TrendMetric {
     }
   }
 
-  int get decimals => this == TrendMetric.glucose ? 0 : (this == TrendMetric.homaIr ? 2 : 1);
+  int get decimals =>
+      this == TrendMetric.glucose ? 0 : (this == TrendMetric.homaIr ? 2 : 1);
 
   double? valueOf(LabRecord r) {
     switch (this) {
@@ -81,27 +87,37 @@ class _TrendsScreenState extends State<TrendsScreen> {
   Future<void> _shareSummary(LabRecord latest) async {
     final text = StringBuffer('My ShifAI summary\n');
     if (latest.homaIr != null) {
-      text.writeln('HOMA-IR: ${latest.homaIr!.toStringAsFixed(2)} '
-          '(${latest.homaIrBand!.label}) on ${DateFormat.yMMMd().format(latest.date)}');
+      text.writeln(
+        'HOMA-IR: ${latest.homaIr!.toStringAsFixed(2)} '
+        '(${latest.homaIrBand!.label}) on ${DateFormat.yMMMd().format(latest.date)}',
+      );
     } else {
       text.writeln('Result from ${DateFormat.yMMMd().format(latest.date)}');
     }
     if (latest.fastingGlucoseMgdl != null) {
-      text.writeln('Fasting glucose: ${latest.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL');
+      text.writeln(
+        'Fasting glucose: ${latest.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
+      );
     }
     if (latest.fastingInsulinUiuml != null) {
-      text.writeln('Fasting insulin: ${latest.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL');
+      text.writeln(
+        'Fasting insulin: ${latest.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL',
+      );
     }
     if (latest.hba1cPercent != null) {
       text.writeln('HbA1c: ${latest.hba1cPercent!.toStringAsFixed(1)}%');
     }
     text.write('Screening tool only, not medical advice.');
 
-    final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text.toString())}');
+    final uri = Uri.parse(
+      'https://wa.me/?text=${Uri.encodeComponent(text.toString())}',
+    );
     var opened = false;
     try {
       opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
+    } on PlatformException {
+      opened = false;
+    } on MissingPluginException {
       opened = false;
     }
     if (!opened && mounted) {
@@ -117,12 +133,20 @@ class _TrendsScreenState extends State<TrendsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete this result?'),
-        content: const Text('It will be removed from your history on this device.'),
+        content: const Text(
+          'It will be removed from your history and synced to your account when online.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.danger),
+            ),
           ),
         ],
       ),
@@ -138,70 +162,90 @@ class _TrendsScreenState extends State<TrendsScreen> {
     final series = all.where((r) => _metric.valueOf(r) != null).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Metabolic Trends')),
+      appBar: AppHeader(
+        title: 'Metabolic Trends',
+        onProfileTap: () => context.read<NavProvider>().setTab(2),
+      ),
       body: provider.loading
           ? const Center(child: CircularProgressIndicator())
           : all.isEmpty
-              ? const _EmptyTrends()
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                  children: [
-                    if (withHoma.isNotEmpty)
-                      _ScoreCard(first: withHoma.first, latest: withHoma.last)
-                    else
-                      const _NoHomaCard(),
-                    const SizedBox(height: 16),
-                    _MetricTabs(
-                      selected: _metric,
-                      onChanged: (m) => setState(() => _metric = m),
-                    ),
-                    const SizedBox(height: 16),
-                    _ChartCard(metric: _metric, series: series),
-                    const SizedBox(height: 18),
-                    FilledButton.icon(
-                      onPressed: () => openAddResult(context),
-                      icon: const Icon(Icons.document_scanner_outlined),
-                      label: const Text('Add Another Result'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.buttonBlue,
-                        minimumSize: const Size.fromHeight(54),
-                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    FilledButton.icon(
-                      onPressed: () => _shareSummary(all.last),
-                      icon: const Icon(Icons.share_outlined),
-                      label: const Text('Share Summary on WhatsApp'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.safeBg,
-                        foregroundColor: AppColors.safeText,
-                        minimumSize: const Size.fromHeight(54),
-                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                    ),
-                    const SizedBox(height: 26),
-                    const Text(
-                      'All results',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.navy),
-                    ),
-                    const SizedBox(height: 10),
-                    for (final r in all.reversed) ...[
-                      _RecordTile(record: r, onDelete: () => _confirmDelete(r)),
-                      const SizedBox(height: 10),
-                    ],
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Screening tool only, not medical advice. Always review results '
-                      'and treatment with your doctor.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.gray, fontSize: 12.5, height: 1.4),
-                    ),
-                  ],
+          ? const _EmptyTrends()
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+              children: [
+                if (withHoma.isNotEmpty)
+                  _ScoreCard(first: withHoma.first, latest: withHoma.last)
+                else
+                  const _NoHomaCard(),
+                const SizedBox(height: 16),
+                _MetricTabs(
+                  selected: _metric,
+                  onChanged: (m) => setState(() => _metric = m),
                 ),
+                const SizedBox(height: 16),
+                _ChartCard(metric: _metric, series: series),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: () => openAddResult(context),
+                  icon: const Icon(Icons.document_scanner_outlined),
+                  label: const Text('Add Another Result'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.buttonBlue,
+                    minimumSize: const Size.fromHeight(54),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                FilledButton.icon(
+                  onPressed: () => _shareSummary(all.last),
+                  icon: const Icon(Icons.share_outlined),
+                  label: const Text('Share Summary on WhatsApp'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.safeBg,
+                    foregroundColor: AppColors.safeText,
+                    minimumSize: const Size.fromHeight(54),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 26),
+                const Text(
+                  'All results',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.navy,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                for (final r in all.reversed) ...[
+                  _RecordTile(record: r, onDelete: () => _confirmDelete(r)),
+                  const SizedBox(height: 10),
+                ],
+                const SizedBox(height: 10),
+                const Text(
+                  'Screening tool only, not medical advice. Always review results '
+                  'and treatment with your doctor.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.gray,
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -217,11 +261,20 @@ class _EmptyTrends extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.show_chart_rounded, size: 52, color: AppColors.accentBlue),
+            Icon(
+              Icons.show_chart_rounded,
+              size: 52,
+              color: AppColors.accentBlue,
+            ),
             SizedBox(height: 12),
-            Text('No results yet',
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.navy)),
+            Text(
+              'No results yet',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.navy,
+              ),
+            ),
             SizedBox(height: 6),
             Text(
               'Add a lab result and your HOMA-IR trend will appear here.',
@@ -311,9 +364,13 @@ class _ScoreCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          delta <= 0 ? Icons.south_east_rounded : Icons.north_east_rounded,
+                          delta <= 0
+                              ? Icons.south_east_rounded
+                              : Icons.north_east_rounded,
                           size: 16,
-                          color: delta <= 0 ? AppColors.safeText : AppColors.dangerText,
+                          color: delta <= 0
+                              ? AppColors.safeText
+                              : AppColors.dangerText,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -321,7 +378,9 @@ class _ScoreCard extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                            color: delta <= 0 ? AppColors.safeText : AppColors.dangerText,
+                            color: delta <= 0
+                                ? AppColors.safeText
+                                : AppColors.dangerText,
                           ),
                         ),
                       ],
@@ -341,12 +400,19 @@ class _ScoreCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.spa_outlined, color: AppColors.buttonBlue, size: 22),
+                  const Icon(
+                    Icons.spa_outlined,
+                    color: AppColors.buttonBlue,
+                    size: 22,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       bandExplanation(band),
-                      style: const TextStyle(color: AppColors.text, height: 1.4),
+                      style: const TextStyle(
+                        color: AppColors.text,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -374,73 +440,80 @@ class _ScaleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, c) {
-      final w = c.maxWidth;
-      double x(double v) => (v / _max).clamp(0.0, 1.0) * w;
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        double x(double v) => (v / _max).clamp(0.0, 1.0) * w;
 
-      Widget seg(int flex, Color color) => Expanded(
-            flex: flex,
-            child: Container(height: 10, color: color),
-          );
+        Widget seg(int flex, Color color) => Expanded(
+          flex: flex,
+          child: Container(height: 10, color: color),
+        );
 
-      return SizedBox(
-        height: 56,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 12,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: Row(
-                  children: [
-                    seg(100, const Color(0xFFBFEBD5)),
-                    seg(90, const Color(0xFFDDF3E5)),
-                    seg(100, const Color(0xFFFBE7A6)),
-                    seg(160, const Color(0xFFF8C9C9)),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              left: x(value) - 8,
-              top: 7,
-              child: Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: bandColor(
-                    value < 1.0
-                        ? HomaIrBand.optimal
-                        : value < 1.9
-                            ? HomaIrBand.normal
-                            : value < 2.9
-                                ? HomaIrBand.earlyResistance
-                                : HomaIrBand.significantResistance,
-                  ),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 4)],
-                ),
-              ),
-            ),
-            for (final m in _marks)
+        return SizedBox(
+          height: 56,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
               Positioned(
-                left: (x(m.$1) - 20).clamp(0.0, math.max(0.0, w - 40)),
-                top: 32,
-                width: 40,
-                child: Text(
-                  m.$2,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 11.5, color: AppColors.gray),
+                left: 0,
+                right: 0,
+                top: 12,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Row(
+                    children: [
+                      seg(100, const Color(0xFFBFEBD5)),
+                      seg(90, const Color(0xFFDDF3E5)),
+                      seg(100, const Color(0xFFFBE7A6)),
+                      seg(160, const Color(0xFFF8C9C9)),
+                    ],
+                  ),
                 ),
               ),
-          ],
-        ),
-      );
-    });
+              Positioned(
+                left: x(value) - 8,
+                top: 7,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: bandColor(
+                      value < 1.0
+                          ? HomaIrBand.optimal
+                          : value < 1.9
+                          ? HomaIrBand.normal
+                          : value < 2.9
+                          ? HomaIrBand.earlyResistance
+                          : HomaIrBand.significantResistance,
+                    ),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x33000000), blurRadius: 4),
+                    ],
+                  ),
+                ),
+              ),
+              for (final m in _marks)
+                Positioned(
+                  left: (x(m.$1) - 20).clamp(0.0, math.max(0.0, w - 40)),
+                  top: 32,
+                  width: 40,
+                  child: Text(
+                    m.$2,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: AppColors.gray,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -474,7 +547,9 @@ class _MetricTabs extends StatelessWidget {
                     m.tab,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: m == selected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: m == selected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: m == selected ? AppColors.navy : AppColors.gray,
                     ),
                   ),
@@ -518,21 +593,30 @@ class _ChartCard extends StatelessWidget {
                       Text(
                         'Your ${metric.title} over time',
                         style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.navy),
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.navy,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        n == 1 ? '1 recorded lab checkup' : '$n recorded lab checkups',
-                        style: const TextStyle(color: AppColors.gray, fontSize: 13),
+                        n == 1
+                            ? '1 recorded lab checkup'
+                            : '$n recorded lab checkups',
+                        style: const TextStyle(
+                          color: AppColors.gray,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 if (pct != null && pct.abs() >= 0.5)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: pct < 0 ? AppColors.safeBg : AppColors.warningBg,
                       borderRadius: BorderRadius.circular(14),
@@ -542,7 +626,9 @@ class _ChartCard extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 12.5,
-                        color: pct < 0 ? AppColors.safeText : AppColors.warningText,
+                        color: pct < 0
+                            ? AppColors.safeText
+                            : AppColors.warningText,
                       ),
                     ),
                   ),
@@ -555,7 +641,11 @@ class _ChartCard extends StatelessWidget {
                 style: TextStyle(color: AppColors.gray),
               )
             else ...[
-              _LatestCallout(metric: metric, record: series.last, value: values.last),
+              _LatestCallout(
+                metric: metric,
+                record: series.last,
+                value: values.last,
+              ),
               const SizedBox(height: 16),
               if (n < 2)
                 Container(
@@ -570,7 +660,10 @@ class _ChartCard extends StatelessWidget {
                   ),
                 )
               else ...[
-                SizedBox(height: 200, child: _TrendChart(metric: metric, series: series)),
+                SizedBox(
+                  height: 200,
+                  child: _TrendChart(metric: metric, series: series),
+                ),
                 if (metric == TrendMetric.homaIr) ...[
                   const SizedBox(height: 8),
                   const Text(
@@ -597,10 +690,13 @@ class _ChartCard extends StatelessWidget {
                           child: Text(
                             pct < 0
                                 ? 'Down ${pct.abs().toStringAsFixed(0)}% since your first result. '
-                                    'Keep going with what is working.'
+                                      'Keep going with what is working.'
                                 : 'Up ${pct.abs().toStringAsFixed(0)}% since your first result. '
-                                    'If it keeps rising, mention it to your doctor.',
-                            style: const TextStyle(color: AppColors.text, height: 1.35),
+                                      'If it keeps rising, mention it to your doctor.',
+                            style: const TextStyle(
+                              color: AppColors.text,
+                              height: 1.35,
+                            ),
                           ),
                         ),
                       ],
@@ -620,7 +716,11 @@ class _LatestCallout extends StatelessWidget {
   final TrendMetric metric;
   final LabRecord record;
   final double value;
-  const _LatestCallout({required this.metric, required this.record, required this.value});
+  const _LatestCallout({
+    required this.metric,
+    required this.record,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -629,7 +729,8 @@ class _LatestCallout extends StatelessWidget {
         'Glucose ${record.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
       if (record.fastingInsulinUiuml != null)
         'Insulin ${record.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL',
-      if (record.hba1cPercent != null) 'HbA1c ${record.hba1cPercent!.toStringAsFixed(1)}%',
+      if (record.hba1cPercent != null)
+        'HbA1c ${record.hba1cPercent!.toStringAsFixed(1)}%',
     ];
     return Container(
       width: double.infinity,
@@ -645,7 +746,10 @@ class _LatestCallout extends StatelessWidget {
             '${DateFormat.MMMd().format(record.date)}: '
             '${value.toStringAsFixed(metric.decimals)} ${metric.unit}',
             style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
           ),
           if (parts.isNotEmpty) ...[
             const SizedBox(height: 2),
@@ -700,8 +804,12 @@ class _TrendChart extends StatelessWidget {
           ],
         ),
         titlesData: FlTitlesData(
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -720,7 +828,9 @@ class _TrendChart extends StatelessWidget {
               interval: xInterval,
               getTitlesWidget: (v, _) {
                 final i = v.toInt();
-                if (v != i || i < 0 || i >= series.length) return const SizedBox.shrink();
+                if (v != i || i < 0 || i >= series.length) {
+                  return const SizedBox.shrink();
+                }
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
@@ -734,7 +844,10 @@ class _TrendChart extends StatelessWidget {
         ),
         lineBarsData: [
           LineChartBarData(
-            spots: [for (var i = 0; i < values.length; i++) FlSpot(i.toDouble(), values[i])],
+            spots: [
+              for (var i = 0; i < values.length; i++)
+                FlSpot(i.toDouble(), values[i]),
+            ],
             isCurved: true,
             curveSmoothness: 0.2,
             preventCurveOverShooting: true,
@@ -743,13 +856,33 @@ class _TrendChart extends StatelessWidget {
             dotData: FlDotData(
               getDotPainter: (spot, _, bar, index) => FlDotCirclePainter(
                 radius: index == values.length - 1 ? 6 : 4.5,
-                color: index == values.length - 1 ? AppColors.warning : Colors.white,
+                color: index == values.length - 1
+                    ? AppColors.warning
+                    : Colors.white,
                 strokeColor: AppColors.buttonBlue,
                 strokeWidth: 2.5,
               ),
             ),
           ),
         ],
+        lineTouchData: LineTouchData(
+          handleBuiltInTouches: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (spots) => spots.map((spot) {
+              final index = spot.x.toInt();
+              if (index < 0 || index >= series.length) return null;
+              return LineTooltipItem(
+                '${DateFormat.MMMd().format(series[index].date)}\n'
+                '${spot.y.toStringAsFixed(metric.decimals)} ${metric.unit}',
+                const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }
@@ -776,12 +909,17 @@ class _RecordTile extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: band == null ? AppColors.pastel : bandBackground(band),
                 border: Border.all(
-                  color: band == null ? AppColors.pastelBorder : bandColor(band),
+                  color: band == null
+                      ? AppColors.pastelBorder
+                      : bandColor(band),
                   width: 2.5,
                 ),
               ),
               child: band == null
-                  ? const Icon(Icons.science_outlined, color: AppColors.buttonBlue)
+                  ? const Icon(
+                      Icons.science_outlined,
+                      color: AppColors.buttonBlue,
+                    )
                   : Text(
                       record.homaIr!.toStringAsFixed(2),
                       style: TextStyle(
@@ -798,25 +936,54 @@ class _RecordTile extends StatelessWidget {
                 children: [
                   Text(
                     DateFormat.yMMMd().format(record.date),
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.navy),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   if (record.fastingGlucoseMgdl != null)
-                    Text('Glucose: ${record.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
-                        style: const TextStyle(color: AppColors.gray, fontSize: 12.5)),
+                    Text(
+                      'Glucose: ${record.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
+                      style: const TextStyle(
+                        color: AppColors.gray,
+                        fontSize: 12.5,
+                      ),
+                    ),
                   if (record.fastingInsulinUiuml != null)
-                    Text('Insulin: ${record.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL',
-                        style: const TextStyle(color: AppColors.gray, fontSize: 12.5)),
+                    Text(
+                      'Insulin: ${record.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL',
+                      style: const TextStyle(
+                        color: AppColors.gray,
+                        fontSize: 12.5,
+                      ),
+                    ),
                   if (record.hba1cPercent != null)
-                    Text('HbA1c: ${record.hba1cPercent!.toStringAsFixed(1)}%',
-                        style: const TextStyle(color: AppColors.gray, fontSize: 12.5)),
+                    Text(
+                      'HbA1c: ${record.hba1cPercent!.toStringAsFixed(1)}%',
+                      style: const TextStyle(
+                        color: AppColors.gray,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  for (final marker in record.otherMarkers)
+                    Text(
+                      '${marker.name}: ${marker.value} ${marker.unit}',
+                      style: const TextStyle(
+                        color: AppColors.gray,
+                        fontSize: 12.5,
+                      ),
+                    ),
                 ],
               ),
             ),
             IconButton(
               tooltip: 'Delete result',
               onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.gray),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.gray,
+              ),
             ),
           ],
         ),
