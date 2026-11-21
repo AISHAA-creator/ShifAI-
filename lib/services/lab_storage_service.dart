@@ -113,6 +113,8 @@ class LabStorageService {
       fastingGlucoseMgdl: record.fastingGlucoseMgdl,
       fastingInsulinUiuml: record.fastingInsulinUiuml,
       hba1cPercent: record.hba1cPercent,
+      triglyceridesMgdl: record.triglyceridesMgdl,
+      hdlMgdl: record.hdlMgdl,
       notes: record.notes,
       otherMarkers: record.otherMarkers,
       updatedAt: now,

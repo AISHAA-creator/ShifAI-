@@ -66,6 +66,10 @@ class _LabScanScreenState extends State<LabScanScreen> {
             initialInsulin: result.insulinValue,
             initialInsulinUnit: result.insulinUnit,
             initialHba1c: result.hba1cPercent,
+            initialTriglycerides: result.triglyceridesValue,
+            initialTriglyceridesUnit: result.triglyceridesUnit,
+            initialHdl: result.hdlValue,
+            initialHdlUnit: result.hdlUnit,
           ),
         ),
       );

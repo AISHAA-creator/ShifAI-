@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shifai/models/lab_record.dart';
+import 'package:shifai/models/user_profile.dart';
 import 'package:shifai/providers/activity_provider.dart';
 import 'package:shifai/providers/appointment_provider.dart';
 import 'package:shifai/providers/auth_provider.dart';
@@ -188,7 +189,7 @@ void main() {
     await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
 
-    // 45-year-old woman, BMI 27.5, waist-to-height 0.55 -> about 21%
+    // 45-year-old woman, BMI 27.5, waist-to-height 0.55
     await tester.enterText(find.byType(TextFormField).at(0), '45');
     await tester.enterText(find.byType(TextFormField).at(1), '165');
     await tester.enterText(find.byType(TextFormField).at(2), '74.9');
@@ -198,8 +199,20 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(find.text('21%'), findsOneWidget);
-    expect(find.text('Low'), findsOneWidget);
+    final expected = testModel.assessBody(
+      const UserProfile(
+        age: 45,
+        female: true,
+        heightCm: 165,
+        weightKg: 74.9,
+        waistCm: 90.75,
+      ),
+    );
+    expect(find.text('${expected.percent}%'), findsOneWidget);
+    expect(
+      find.text(expected.band.label.replaceAll(' risk', '')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('measurements form rejects an out-of-range height', (
@@ -359,6 +372,50 @@ void main() {
     await tester.tap(find.byType(DsSwitch));
     await tester.pumpAndSettle();
     expect(find.text('Shown in your notifications'), findsOneWidget);
+  });
+
+  testWidgets('without insulin the result is an estimate from the labs', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'shifai_profile': '{"age":45,"female":true,"heightCm":165,"weightKg":74.9,"waistCm":90.75}',
+    });
+    phone(tester, h: 1800);
+    final record = LabRecord(
+      id: 'e',
+      date: DateTime(2026, 10, 12),
+      fastingGlucoseMgdl: 118,
+      hba1cPercent: 6.2,
+      triglyceridesMgdl: 240,
+      hdlMgdl: 34,
+    );
+    await tester.pumpWidget(_app(ResultScreen(record: record)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your\nestimate'), findsOneWidget);
+    expect(find.textContaining('without an insulin test'), findsOneWidget);
+    expect(find.textContaining('Mainly because of'), findsOneWidget);
+    // poor labs give a high estimate, so a doctor is suggested
+    expect(find.text('High risk'), findsOneWidget);
+    expect(find.text('See a doctor about this result'), findsOneWidget);
+  });
+
+  testWidgets('the estimate asks for measurements when they are missing', (
+    tester,
+  ) async {
+    phone(tester, h: 1800);
+    final record = LabRecord(
+      id: 'e2',
+      date: DateTime(2026, 10, 12),
+      fastingGlucoseMgdl: 90,
+      hba1cPercent: 5.2,
+      triglyceridesMgdl: 90,
+      hdlMgdl: 55,
+    );
+    await tester.pumpWidget(_app(ResultScreen(record: record)));
+    await tester.pumpAndSettle();
+    expect(find.text('Add my measurements'), findsOneWidget);
+    expect(find.text('High risk'), findsNothing);
   });
 
   testWidgets('only a high band suggests a doctor on the result screen', (

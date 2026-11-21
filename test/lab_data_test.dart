@@ -33,6 +33,42 @@ void main() {
     expect(restored.otherMarkers.single.name, 'Cholesterol');
   });
 
+  test('triglycerides and HDL survive storage and the cloud round trip', () {
+    final record = LabRecord(
+      id: 'a6e5f91a-164c-47e5-bbc3-01c0028edb43',
+      date: DateTime(2026, 10, 12),
+      fastingGlucoseMgdl: 83,
+      hba1cPercent: 4.5,
+      triglyceridesMgdl: 20,
+      hdlMgdl: 40,
+      updatedAt: DateTime.utc(2026, 10, 13),
+    );
+    final local = LabRecord.fromJson(record.toJson());
+    expect(local.triglyceridesMgdl, 20);
+    expect(local.hdlMgdl, 40);
+    final cloud = record.toCloudJson('user-1');
+    expect(cloud['triglycerides_mg_dl'], 20);
+    expect(cloud['hdl_mg_dl'], 40);
+    final back = LabRecord.fromCloudJson(cloud);
+    expect(back.triglyceridesMgdl, 20);
+    expect(back.hdlMgdl, 40);
+  });
+
+  test(
+    'the new columns are not sent when empty (older databases keep working)',
+    () {
+      final record = LabRecord(
+        id: 'a6e5f91a-164c-47e5-bbc3-01c0028edb44',
+        date: DateTime(2026, 10, 12),
+        fastingGlucoseMgdl: 90,
+        fastingInsulinUiuml: 8,
+      );
+      final cloud = record.toCloudJson('user-1');
+      expect(cloud.containsKey('triglycerides_mg_dl'), isFalse);
+      expect(cloud.containsKey('hdl_mg_dl'), isFalse);
+    },
+  );
+
   test('sync prefers the newer copy and retains unique offline records', () {
     final old = LabRecord(
       id: 'shared',

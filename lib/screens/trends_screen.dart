@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 
 import '../models/lab_record.dart';
 import '../providers/lab_records_provider.dart';
+import '../providers/profile_provider.dart';
+import '../services/risk_model.dart';
 import '../theme/ds.dart';
 import '../utils/open_add_result.dart';
 import '../utils/share_summary.dart';
@@ -205,7 +207,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
               if (withHoma.isNotEmpty)
                 _ScoreCard(first: withHoma.first, latest: withHoma.last)
               else
-                const _NoHomaCard(),
+                _NoHomaCard(latest: all.last),
               const SizedBox(height: 20),
               _MetricTabs(
                 selected: _metric,
@@ -290,22 +292,105 @@ class _EmptyTrends extends StatelessWidget {
   );
 }
 
+/// No HOMA-IR yet (no insulin value). When the latest result has glucose,
+/// HbA1c, triglycerides and HDL and the body measurements are known, show the
+/// estimate that needs no insulin test; otherwise say what is missing.
 class _NoHomaCard extends StatelessWidget {
-  const _NoHomaCard();
+  const _NoHomaCard({required this.latest});
+  final LabRecord latest;
 
   @override
-  Widget build(BuildContext context) => DsCard(
-    padding: const EdgeInsets.all(22),
-    child: Text(
-      'Add both fasting glucose and insulin to see your HOMA-IR score.',
-      style: DS.text(
-        size: 15,
-        weight: FontWeight.w500,
-        color: DS.muted,
-        height: 1.5,
+  Widget build(BuildContext context) {
+    final provider = context.watch<ProfileProvider>();
+    final profile = provider.profile;
+    final model = provider.model;
+    final hasLabs =
+        latest.fastingGlucoseMgdl != null &&
+        latest.hba1cPercent != null &&
+        latest.triglyceridesMgdl != null &&
+        latest.hdlMgdl != null;
+
+    if (hasLabs && profile != null && model != null) {
+      final a = model.assessLabs(
+        profile,
+        LabInputs(
+          glucoseMgdl: latest.fastingGlucoseMgdl!,
+          hba1cPercent: latest.hba1cPercent!,
+          triglyceridesMgdl: latest.triglyceridesMgdl!,
+          hdlMgdl: latest.hdlMgdl!,
+        ),
+      );
+      final (bg, fg) = switch (a.band) {
+        RiskBand.low => (DS.greenTint, DS.greenText),
+        RiskBand.moderate => (DS.amberTint, DS.amberText),
+        RiskBand.high => (DS.redTint, DS.redText),
+      };
+      final reasons = a.topFactors(max: 3);
+      return DsCard(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Estimate without insulin',
+                  style: DS.text(
+                    size: 15,
+                    weight: FontWeight.w600,
+                    color: DS.muted,
+                  ),
+                ),
+                DsPill(a.band.label, background: bg, foreground: fg),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${a.percent}%',
+              style: DS.text(
+                size: 56,
+                weight: FontWeight.w800,
+                letterSpacing: -2,
+                height: 1.05,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              reasons.isEmpty
+                  ? 'Chance that your HOMA-IR is 2.9 or higher.'
+                  : 'Chance that your HOMA-IR is 2.9 or higher. Mainly because '
+                        'of: ${reasons.map((f) => f.label.toLowerCase()).join(', ')}.',
+              style: DS.text(
+                size: 14,
+                weight: FontWeight.w500,
+                color: DS.muted,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return DsCard(
+      padding: const EdgeInsets.all(22),
+      child: Text(
+        hasLabs
+            ? 'Add your age, sex, height, weight and waist in your profile to '
+                  'get an estimate from these blood values.'
+            : 'Add both fasting glucose and insulin to see your HOMA-IR score. '
+                  'Without insulin, glucose, HbA1c, triglycerides and HDL '
+                  'together give an estimate.',
+        style: DS.text(
+          size: 15,
+          weight: FontWeight.w500,
+          color: DS.muted,
+          height: 1.5,
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _ScoreCard extends StatelessWidget {

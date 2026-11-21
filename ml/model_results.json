@@ -1,0 +1,134 @@
+{
+  "n": 6080,
+  "prevalence": 0.3689,
+  "cutoff": 2.9,
+  "cv_folds": 5,
+  "sets": {
+    "basic": {
+      "lr": {
+        "auc": 0.8046,
+        "auc_sd": 0.0078,
+        "brier": 0.1715,
+        "calibration_error": 0.0346
+      },
+      "mlp": {
+        "auc": 0.8044,
+        "auc_sd": 0.0072,
+        "brier": 0.1718,
+        "calibration_error": 0.0323
+      },
+      "both": {
+        "auc": 0.8054,
+        "auc_sd": 0.0077,
+        "brier": 0.1709,
+        "calibration_error": 0.0297
+      },
+      "n": 6080
+    },
+    "lab": {
+      "lr": {
+        "auc": 0.8681,
+        "auc_sd": 0.0042,
+        "brier": 0.1404,
+        "calibration_error": 0.0239
+      },
+      "mlp": {
+        "auc": 0.8757,
+        "auc_sd": 0.0032,
+        "brier": 0.1361,
+        "calibration_error": 0.0248
+      },
+      "both": {
+        "auc": 0.8743,
+        "auc_sd": 0.0035,
+        "brier": 0.1367,
+        "calibration_error": 0.024
+      },
+      "n": 6080
+    },
+    "basic_same_people": {
+      "lr": {
+        "auc": 0.8114,
+        "auc_sd": 0.0085,
+        "brier": 0.1691,
+        "calibration_error": 0.0351
+      },
+      "mlp": {
+        "auc": 0.8102,
+        "auc_sd": 0.0078,
+        "brier": 0.1701,
+        "calibration_error": 0.0374
+      },
+      "both": {
+        "auc": 0.8117,
+        "auc_sd": 0.0084,
+        "brier": 0.1688,
+        "calibration_error": 0.0337
+      },
+      "n": 4867
+    },
+    "basic_plus_questions": {
+      "lr": {
+        "auc": 0.8124,
+        "auc_sd": 0.0092,
+        "brier": 0.1686,
+        "calibration_error": 0.0345
+      },
+      "mlp": {
+        "auc": 0.7993,
+        "auc_sd": 0.0097,
+        "brier": 0.1764,
+        "calibration_error": 0.0599
+      },
+      "both": {
+        "auc": 0.809,
+        "auc_sd": 0.0086,
+        "brier": 0.1709,
+        "calibration_error": 0.0435
+      },
+      "n": 4867
+    },
+    "lab_same_people": {
+      "lr": {
+        "auc": 0.8754,
+        "auc_sd": 0.012,
+        "brier": 0.1373,
+        "calibration_error": 0.034
+      },
+      "mlp": {
+        "auc": 0.8797,
+        "auc_sd": 0.0145,
+        "brier": 0.1341,
+        "calibration_error": 0.0287
+      },
+      "both": {
+        "auc": 0.8794,
+        "auc_sd": 0.0137,
+        "brier": 0.1344,
+        "calibration_error": 0.0292
+      },
+      "n": 4867
+    },
+    "lab_plus_questions": {
+      "lr": {
+        "auc": 0.8754,
+        "auc_sd": 0.0125,
+        "brier": 0.1373,
+        "calibration_error": 0.0364
+      },
+      "mlp": {
+        "auc": 0.8776,
+        "auc_sd": 0.015,
+        "brier": 0.1353,
+        "calibration_error": 0.0291
+      },
+      "both": {
+        "auc": 0.8783,
+        "auc_sd": 0.0139,
+        "brier": 0.135,
+        "calibration_error": 0.0322
+      },
+      "n": 4867
+    }
+  }
+}

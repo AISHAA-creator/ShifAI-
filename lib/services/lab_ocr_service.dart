@@ -5,9 +5,6 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 
 import '../models/lab_record.dart';
 
-/// Unit printed next to a triglycerides or HDL result.
-enum LipidUnit { gl, mmoll, mgdl }
-
 /// Best-effort extraction of glucose / insulin / HbA1c / triglycerides / HDL
 /// values from a photo of a printed lab report. Handles English and French lab
 /// terminology (glycémie, insuline, hémoglobine glyquée, triglycérides,

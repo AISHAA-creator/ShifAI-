@@ -18,6 +18,10 @@ class LabEntryFormScreen extends StatefulWidget {
   final double? initialInsulin;
   final InsulinUnit? initialInsulinUnit;
   final double? initialHba1c;
+  final double? initialTriglycerides;
+  final LipidUnit? initialTriglyceridesUnit;
+  final double? initialHdl;
+  final LipidUnit? initialHdlUnit;
   final bool fromScan;
 
   const LabEntryFormScreen({
@@ -27,6 +31,10 @@ class LabEntryFormScreen extends StatefulWidget {
     this.initialInsulin,
     this.initialInsulinUnit,
     this.initialHba1c,
+    this.initialTriglycerides,
+    this.initialTriglyceridesUnit,
+    this.initialHdl,
+    this.initialHdlUnit,
     this.fromScan = false,
   });
 
@@ -40,9 +48,13 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
   late final TextEditingController _glucoseCtrl;
   late final TextEditingController _insulinCtrl;
   late final TextEditingController _hba1cCtrl;
+  late final TextEditingController _trigCtrl;
+  late final TextEditingController _hdlCtrl;
 
   late GlucoseUnit _glucoseUnit;
   late InsulinUnit _insulinUnit;
+  late LipidUnit _trigUnit;
+  late LipidUnit _hdlUnit;
   DateTime _date = DateTime.now();
   bool _saving = false;
 
@@ -58,6 +70,12 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     _hba1cCtrl = TextEditingController(
       text: widget.initialHba1c?.toString() ?? '',
     );
+    _trigCtrl = TextEditingController(
+      text: widget.initialTriglycerides?.toString() ?? '',
+    );
+    _hdlCtrl = TextEditingController(text: widget.initialHdl?.toString() ?? '');
+    _trigUnit = widget.initialTriglyceridesUnit ?? LipidUnit.gl;
+    _hdlUnit = widget.initialHdlUnit ?? LipidUnit.gl;
     _glucoseUnit = widget.initialGlucoseUnit ?? GlucoseUnit.gl;
     _insulinUnit = widget.initialInsulinUnit ?? InsulinUnit.uiuml;
   }
@@ -67,6 +85,8 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     _glucoseCtrl.dispose();
     _insulinCtrl.dispose();
     _hba1cCtrl.dispose();
+    _trigCtrl.dispose();
+    _hdlCtrl.dispose();
     super.dispose();
   }
 
@@ -89,8 +109,14 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     final glucoseRaw = _parse(_glucoseCtrl);
     final insulinRaw = _parse(_insulinCtrl);
     final hba1cRaw = _parse(_hba1cCtrl);
+    final trigRaw = _parse(_trigCtrl);
+    final hdlRaw = _parse(_hdlCtrl);
 
-    if (glucoseRaw == null && insulinRaw == null && hba1cRaw == null) {
+    if (glucoseRaw == null &&
+        insulinRaw == null &&
+        hba1cRaw == null &&
+        trigRaw == null &&
+        hdlRaw == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Enter at least one value to continue.')),
       );
@@ -107,6 +133,12 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
           ? null
           : UnitConverter.insulinToUiuml(insulinRaw, _insulinUnit),
       hba1cPercent: hba1cRaw,
+      triglyceridesMgdl: trigRaw == null
+          ? null
+          : UnitConverter.triglyceridesToMgdl(trigRaw, _trigUnit),
+      hdlMgdl: hdlRaw == null
+          ? null
+          : UnitConverter.hdlToMgdl(hdlRaw, _hdlUnit),
       updatedAt: DateTime.now(),
     );
 
@@ -114,7 +146,15 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
 
     // With both glucose and insulin there is a HOMA-IR to show: the result
     // screen saves it when the person chooses. Otherwise save straight away.
-    if (record.homaIr != null) {
+    // Without insulin, glucose + HbA1c + triglycerides + HDL still give an
+    // estimate (it needs the body measurements, which the result screen asks
+    // for if they are missing).
+    final canEstimate =
+        record.fastingGlucoseMgdl != null &&
+        record.hba1cPercent != null &&
+        record.triglyceridesMgdl != null &&
+        record.hdlMgdl != null;
+    if (record.homaIr != null || canEstimate) {
       navigator.push(
         MaterialPageRoute(builder: (_) => ResultScreen(record: record)),
       );
@@ -387,6 +427,65 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                             }
                             return null;
                           },
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _card(
+                        label: 'Triglycerides ',
+                        labelSuffix: Text(
+                          '(optional)',
+                          style: DS.text(
+                            size: 15.5,
+                            weight: FontWeight.w500,
+                            color: DS.muted,
+                          ),
+                        ),
+                        tag: scan
+                            ? _tag(widget.initialTriglycerides != null)
+                            : null,
+                        child: _valueRow(
+                          controller: _trigCtrl,
+                          semanticLabel: 'Value',
+                          validator: (v) =>
+                              _validateOptionalPositive(v, 'triglycerides'),
+                          units: DsSegmented<LipidUnit>(
+                            options: const {
+                              LipidUnit.gl: 'g/L',
+                              LipidUnit.mgdl: 'mg/dL',
+                              LipidUnit.mmoll: 'mmol/L',
+                            },
+                            value: _trigUnit,
+                            height: 50,
+                            onChanged: (u) => setState(() => _trigUnit = u),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _card(
+                        label: 'HDL cholesterol ',
+                        labelSuffix: Text(
+                          '(optional)',
+                          style: DS.text(
+                            size: 15.5,
+                            weight: FontWeight.w500,
+                            color: DS.muted,
+                          ),
+                        ),
+                        tag: scan ? _tag(widget.initialHdl != null) : null,
+                        child: _valueRow(
+                          controller: _hdlCtrl,
+                          semanticLabel: 'Value',
+                          validator: (v) => _validateOptionalPositive(v, 'HDL'),
+                          units: DsSegmented<LipidUnit>(
+                            options: const {
+                              LipidUnit.gl: 'g/L',
+                              LipidUnit.mgdl: 'mg/dL',
+                              LipidUnit.mmoll: 'mmol/L',
+                            },
+                            value: _hdlUnit,
+                            height: 50,
+                            onChanged: (u) => setState(() => _hdlUnit = u),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),

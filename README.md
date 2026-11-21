@@ -107,16 +107,27 @@ For browser-based password reset and email verification, Supabase must allow the
 
 ## Risk model
 
-`ml/train_risk_model.py` downloads public NHANES 2013-2018 files from the CDC, keeps adults with fasting glucose and insulin (excluding pregnancy and diagnosed diabetes), and trains a logistic regression to predict HOMA-IR >= 2.9 from age, sex, BMI and waist-to-height ratio. The weights are exported to `assets/ml/risk_model.json` and evaluated in Dart (`lib/services/risk_model.dart`); a test checks that the Dart output matches scikit-learn.
+`ml/train_models.py` downloads public NHANES 2013-2018 files from the CDC, keeps adults with fasting glucose and insulin (excluding pregnancy and diagnosed diabetes), and trains models that predict HOMA-IR >= 2.9. Each input set is a logistic regression plus a small neural network (two hidden layers) whose probabilities are averaged. The weights are exported to `assets/ml/risk_model.json` and evaluated in Dart (`lib/services/risk_model.dart`); a test checks that the Dart output matches scikit-learn to six decimals.
+
+| Input set | Used when | Cross-validated AUC (average of both models) |
+| --- | --- | --- |
+| `basic`: age, sex, BMI, waist-to-height | no blood test | 0.805 |
+| `lab`: basic + fasting glucose, HbA1c, triglycerides, HDL | blood values but no insulin value | 0.874 |
+
+Asking about family history and weekly activity did not improve either set on the same people, so they are not model inputs. Full numbers: `ml/model_results.json`.
 
 ```powershell
 pip install -r ml/requirements.txt
-python ml/train_risk_model.py
+python ml/train_models.py
 ```
 
-`ml/compare_models.py` compares logistic regression, gradient boosting and a small neural network on the same data, with and without routine lab values (no insulin needed). Results are written to `ml/benchmark_results.json`.
+`ml/compare_models.py` is an earlier exploration that also compares gradient boosting.
 
-Honest limits: the data is from a US population and may be less accurate elsewhere, the label (HOMA-IR >= 2.9) is a proxy and not a diagnosis, and there is no external validation.
+Honest limits: the data is from a US population and may be less accurate elsewhere, the label (HOMA-IR >= 2.9) is a proxy and not a diagnosis, glucose is part of the HOMA-IR formula (so the `lab` set partly rebuilds it, and the model is still useful because it needs no insulin value), and there is no external validation yet.
+
+### Database
+
+Triglycerides and HDL are stored in `lab_reports`. Run `supabase/migrations/202611220001_add_triglycerides_hdl.sql` once in the Supabase SQL Editor. The app only sends these two columns when a value is entered, so it keeps working against a database that does not have them yet.
 
 ## Run automated checks
 

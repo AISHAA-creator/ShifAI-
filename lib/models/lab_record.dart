@@ -2,12 +2,17 @@ enum GlucoseUnit { mgdl, mmoll, gl }
 
 enum InsulinUnit { uiuml, pmoll }
 
+/// Unit printed next to triglycerides or HDL cholesterol.
+enum LipidUnit { gl, mmoll, mgdl }
+
 class LabRecord {
   final String id;
   final DateTime date;
   final double? fastingGlucoseMgdl; // stored normalized to mg/dL
   final double? fastingInsulinUiuml; // stored normalized to µIU/mL
   final double? hba1cPercent;
+  final double? triglyceridesMgdl; // stored normalized to mg/dL
+  final double? hdlMgdl; // stored normalized to mg/dL
   final String? notes;
   final List<LabMarker> otherMarkers;
   final DateTime updatedAt;
@@ -19,6 +24,8 @@ class LabRecord {
     this.fastingGlucoseMgdl,
     this.fastingInsulinUiuml,
     this.hba1cPercent,
+    this.triglyceridesMgdl,
+    this.hdlMgdl,
     this.notes,
     this.otherMarkers = const [],
     DateTime? updatedAt,
@@ -48,6 +55,8 @@ class LabRecord {
     'fastingGlucoseMgdl': fastingGlucoseMgdl,
     'fastingInsulinUiuml': fastingInsulinUiuml,
     'hba1cPercent': hba1cPercent,
+    'triglyceridesMgdl': triglyceridesMgdl,
+    'hdlMgdl': hdlMgdl,
     'notes': notes,
     'otherMarkers': otherMarkers.map((marker) => marker.toJson()).toList(),
     'updatedAt': updatedAt.toIso8601String(),
@@ -63,6 +72,8 @@ class LabRecord {
       fastingGlucoseMgdl: (json['fastingGlucoseMgdl'] as num?)?.toDouble(),
       fastingInsulinUiuml: (json['fastingInsulinUiuml'] as num?)?.toDouble(),
       hba1cPercent: (json['hba1cPercent'] as num?)?.toDouble(),
+      triglyceridesMgdl: (json['triglyceridesMgdl'] as num?)?.toDouble(),
+      hdlMgdl: (json['hdlMgdl'] as num?)?.toDouble(),
       notes: json['notes'] as String?,
       otherMarkers: rawMarkers
           .map((marker) => LabMarker.fromJson(marker as Map<String, dynamic>))
@@ -79,6 +90,8 @@ class LabRecord {
     'fasting_glucose_mg_dl': fastingGlucoseMgdl,
     'fasting_insulin_uiu_ml': fastingInsulinUiuml,
     'hba1c_percent': hba1cPercent,
+    if (triglyceridesMgdl != null) 'triglycerides_mg_dl': triglyceridesMgdl,
+    if (hdlMgdl != null) 'hdl_mg_dl': hdlMgdl,
     'other_markers': otherMarkers.map((marker) => marker.toJson()).toList(),
     'notes': notes,
     'updated_at': updatedAt.toUtc().toIso8601String(),
@@ -94,6 +107,8 @@ class LabRecord {
       fastingGlucoseMgdl: (json['fasting_glucose_mg_dl'] as num?)?.toDouble(),
       fastingInsulinUiuml: (json['fasting_insulin_uiu_ml'] as num?)?.toDouble(),
       hba1cPercent: (json['hba1c_percent'] as num?)?.toDouble(),
+      triglyceridesMgdl: (json['triglycerides_mg_dl'] as num?)?.toDouble(),
+      hdlMgdl: (json['hdl_mg_dl'] as num?)?.toDouble(),
       otherMarkers: rawMarkers
           .map((marker) => LabMarker.fromJson(marker as Map<String, dynamic>))
           .toList(),
@@ -153,6 +168,30 @@ class UnitConverter {
       case GlucoseUnit.mmoll:
         return value * 18.0182;
       case GlucoseUnit.gl:
+        return value * 100;
+    }
+  }
+
+  /// Triglycerides to mg/dL (g/L x 100, mmol/L x 88.57).
+  static double triglyceridesToMgdl(double value, LipidUnit unit) {
+    switch (unit) {
+      case LipidUnit.mgdl:
+        return value;
+      case LipidUnit.mmoll:
+        return value * 88.57;
+      case LipidUnit.gl:
+        return value * 100;
+    }
+  }
+
+  /// HDL cholesterol to mg/dL (g/L x 100, mmol/L x 38.67).
+  static double hdlToMgdl(double value, LipidUnit unit) {
+    switch (unit) {
+      case LipidUnit.mgdl:
+        return value;
+      case LipidUnit.mmoll:
+        return value * 38.67;
+      case LipidUnit.gl:
         return value * 100;
     }
   }
