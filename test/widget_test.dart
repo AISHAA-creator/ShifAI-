@@ -115,10 +115,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light(),
-        home: const LabEntryFormScreen(),
-      ),
+      MaterialApp(theme: AppTheme.light(), home: const LabEntryFormScreen()),
     );
     await tester.pumpAndSettle();
 

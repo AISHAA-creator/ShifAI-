@@ -151,9 +151,8 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
   Future<void> _addMarker() async {
     final marker = await showDialog<LabMarker>(
       context: context,
-      builder: (_) => _AddMarkerDialog(
-        validateOptionalPositive: _validateOptionalPositive,
-      ),
+      builder: (_) =>
+          _AddMarkerDialog(validateOptionalPositive: _validateOptionalPositive),
     );
     if (marker != null && mounted) {
       setState(() => _otherMarkers.add(marker));
