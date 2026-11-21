@@ -4,11 +4,16 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/supabase_config.dart';
+import 'providers/activity_provider.dart';
+import 'providers/appointment_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/coaching_provider.dart';
 import 'providers/lab_records_provider.dart';
+import 'providers/medicine_provider.dart';
 import 'providers/nav_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/settings_provider.dart';
+import 'providers/skin_check_provider.dart';
 import 'screens/app_root_gate.dart';
 import 'services/lab_cloud_service.dart';
 import 'services/risk_model.dart';
@@ -73,10 +78,28 @@ class ShifAiApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ProfileProvider(model: riskModel),
         ),
+        ChangeNotifierProvider(create: (_) => AppointmentProvider()),
+        ChangeNotifierProvider(create: (_) => MedicineProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => ActivityProvider()),
+        ChangeNotifierProvider(create: (_) => SkinCheckProvider()),
       ],
       child: MaterialApp(
         locale: DevicePreview.locale(context),
-        builder: DevicePreview.appBuilder,
+        builder: (context, child) {
+          final wrapped = DevicePreview.appBuilder(context, child);
+          // The text size chosen in Profile, on top of the phone's own setting.
+          final factor = context.watch<SettingsProvider>().textScale;
+          final media = MediaQuery.of(context);
+          return MediaQuery(
+            data: media.copyWith(
+              textScaler: TextScaler.linear(
+                media.textScaler.scale(1.0) * factor,
+              ),
+            ),
+            child: wrapped,
+          );
+        },
         title: 'ShifAI',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),

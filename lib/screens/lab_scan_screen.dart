@@ -1,11 +1,12 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/lab_ocr_service.dart';
-import '../theme/app_colors.dart';
-import '../widgets/step_header.dart';
+import '../theme/ds.dart';
+import '../widgets/ds_widgets.dart';
 import 'lab_entry_form_screen.dart';
 
 /// Step 1 of the scan flow: photo capture + on-device OCR of a printed lab
@@ -51,7 +52,7 @@ class _LabScanScreenState extends State<LabScanScreen> {
         setState(
           () => _error =
               "Couldn't find glucose, insulin or HbA1c in this photo. Try a "
-              'clearer, well-lit photo, or enter the values manually.',
+              'clearer, well-lit photo, or type the values in.',
         );
         return;
       }
@@ -72,7 +73,7 @@ class _LabScanScreenState extends State<LabScanScreen> {
       if (!mounted) return;
       setState(() {
         _processing = false;
-        _error = 'Could not read this image. Please try again or enter values manually.';
+        _error = 'Could not read this image. Try again or type the values in.';
       });
     }
   }
@@ -85,55 +86,50 @@ class _LabScanScreenState extends State<LabScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Lab Results')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-          child: Column(
-            children: [
-              const StepHeader(current: 0),
-              const SizedBox(height: 14),
-              Expanded(child: _viewfinder()),
-              if (_error != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                  _error!,
-                  style: const TextStyle(color: AppColors.dangerText),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.pastel,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Row(
+      body: DsBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.lightbulb_outline,
-                        color: AppColors.buttonBlue,
+                    const DsBackButton(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 9,
                       ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
+                      decoration: BoxDecoration(
+                        color: DS.skyTint,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                       child: Text(
-                        'Hold your phone flat above the page. ShifAI reads your '
-                        'results on this device — nothing is uploaded.',
-                        style: TextStyle(
-                          color: AppColors.text,
-                          height: 1.35,
-                          fontSize: 13.5,
+                        'Step 1 of 2',
+                        style: DS.text(
+                          size: 14,
+                          weight: FontWeight.w700,
+                          color: DS.navy,
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                const DsTitle('Scan your', 'lab report', size: 36),
+                const SizedBox(height: 22),
+                Expanded(child: _viewfinder()),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: DS.text(size: 14, color: DS.redText, height: 1.4),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -141,97 +137,91 @@ class _LabScanScreenState extends State<LabScanScreen> {
   }
 
   Widget _viewfinder() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF14507F), Color(0xFF082C4A)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            if (_image != null)
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.85,
-                  child: Image.file(_image!, fit: BoxFit.cover),
-                ),
-              ),
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.all(26),
-                child: CustomPaint(painter: _FramePainter()),
-              ),
-            ),
-            Positioned(
-              top: 18,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: _pill(
-                  'Processed on your device',
-                  icon: Icons.lock_outline,
-                ),
-              ),
-            ),
-            Center(
-              child: _processing
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : (_image == null
-                        ? _pill('Align printed paper in frame')
-                        : const SizedBox.shrink()),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 22,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _roundButton(
-                    Icons.edit_note_rounded,
-                    'Enter values manually',
-                    _enterManually,
-                  ),
-                  _captureButton(),
-                  _roundButton(
-                    Icons.photo_library_outlined,
-                    'Choose from gallery',
-                    _processing ? null : () => _capture(ImageSource.gallery),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _pill(String text, {IconData? icon}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(34),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF14335F), Color(0xFF0A1E3E)],
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x47001E50),
+            blurRadius: 40,
+            offset: Offset(0, 20),
+          ),
+        ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: AppColors.buttonBlue),
-            const SizedBox(width: 6),
-          ],
-          Text(
-            text,
-            style: const TextStyle(
-              color: AppColors.navy,
-              fontWeight: FontWeight.w600,
-              fontSize: 13.5,
+          if (_image != null)
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.85,
+                child: Image.file(_image!, fit: BoxFit.cover),
+              ),
+            )
+          else
+            Align(
+              alignment: const Alignment(0, -0.45),
+              child: Transform.rotate(
+                angle: -2 * math.pi / 180,
+                child: const _Paper(),
+              ),
+            ),
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(36, 40, 36, 150),
+              child: CustomPaint(painter: _FramePainter()),
+            ),
+          ),
+          Align(
+            alignment: const Alignment(0, 0.42),
+            child: _processing
+                ? const CircularProgressIndicator(color: Colors.white)
+                : (_image == null
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            'Fit the page in the frame',
+                            style: DS.text(
+                              size: 14.5,
+                              weight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink()),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 26,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _roundButton(
+                  Icons.edit_outlined,
+                  'Type the values in',
+                  _enterManually,
+                ),
+                _shutter(),
+                _roundButton(
+                  Icons.photo_library_outlined,
+                  'Choose from the gallery',
+                  _processing ? null : () => _capture(ImageSource.gallery),
+                ),
+              ],
             ),
           ),
         ],
@@ -239,51 +229,43 @@ class _LabScanScreenState extends State<LabScanScreen> {
     );
   }
 
-  Widget _roundButton(IconData icon, String tooltip, VoidCallback? onTap) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
+  Widget _roundButton(IconData icon, String label, VoidCallback? onTap) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
         onTap: onTap,
-        customBorder: const CircleBorder(),
         child: Container(
-          width: 52,
-          height: 52,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.16),
+            color: Colors.white.withValues(alpha: 0.14),
           ),
-          child: Icon(icon, color: Colors.white),
+          child: Icon(icon, size: 25, color: Colors.white),
         ),
       ),
     );
   }
 
-  Widget _captureButton() {
-    return Tooltip(
-      message: 'Take a photo',
-      child: InkWell(
+  Widget _shutter() {
+    return Semantics(
+      button: true,
+      label: 'Take a photo',
+      child: GestureDetector(
         onTap: _processing ? null : () => _capture(ImageSource.camera),
-        customBorder: const CircleBorder(),
         child: Container(
           width: 84,
           height: 84,
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.5),
-              width: 4,
-            ),
+            border: Border.all(color: DS.sky, width: 3),
           ),
           child: const DecoratedBox(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
-            ),
-            child: Icon(
-              Icons.camera_alt_outlined,
-              size: 32,
-              color: AppColors.navy,
             ),
           ),
         ),
@@ -292,16 +274,101 @@ class _LabScanScreenState extends State<LabScanScreen> {
   }
 }
 
+/// Little sheet of paper drawn in the viewfinder (an illustration, not a
+/// preview of the camera).
+class _Paper extends StatelessWidget {
+  const _Paper();
+
+  Widget _row(double a, double b, {bool tint = false}) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+    decoration: BoxDecoration(
+      color: tint ? DS.skyTint : null,
+      borderRadius: BorderRadius.circular(7),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Container(
+          width: a,
+          height: 6,
+          decoration: BoxDecoration(
+            color: tint ? DS.sky : const Color(0xFFD8E3EE),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        Container(
+          width: b,
+          height: 6,
+          decoration: BoxDecoration(
+            color: tint ? DS.navy : const Color(0xFFC7D6E6),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 200,
+    height: 262,
+    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 110,
+          height: 8,
+          decoration: BoxDecoration(
+            color: const Color(0xFFC7D6E6),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 11),
+        Container(
+          width: 176,
+          height: 5,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE3ECF5),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(height: 11),
+        Container(
+          width: 144,
+          height: 5,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE3ECF5),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _row(76, 28, tint: true),
+        const SizedBox(height: 11),
+        _row(92, 24),
+        const SizedBox(height: 11),
+        _row(60, 24, tint: true),
+        const SizedBox(height: 11),
+        _row(84, 26),
+      ],
+    ),
+  );
+}
+
 class _FramePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF9CCBFF)
+      ..color = DS.sky
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
+      ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
     const len = 38.0;
-    const r = 14.0;
+    const r = 20.0;
     final w = size.width;
     final h = size.height;
 

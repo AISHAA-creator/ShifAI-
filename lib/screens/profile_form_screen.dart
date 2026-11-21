@@ -3,10 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
-import '../theme/app_colors.dart';
+import '../theme/ds.dart';
+import '../widgets/ds_widgets.dart';
 
-/// Age, sex, height, weight and waist: everything the risk estimate needs,
-/// none of it requiring a blood test.
+/// My measurements: age, sex, height, weight and waist. Everything the risk
+/// estimate needs, none of it requiring a blood test. Kept on this device.
 class ProfileFormScreen extends StatefulWidget {
   const ProfileFormScreen({super.key});
 
@@ -68,115 +69,213 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
     navigator.pop();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Your measurements')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.pastel,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.lock_outline,
-                    color: AppColors.buttonBlue,
-                    size: 20,
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'No blood test needed. These stay on your device and are '
-                      'only used to estimate your risk.',
-                      style: TextStyle(
-                        color: AppColors.text,
-                        height: 1.35,
-                        fontSize: 13.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Sex',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.navy,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: true, label: Text('Female')),
-                ButtonSegment(value: false, label: Text('Male')),
-              ],
-              selected: {_female},
-              onSelectionChanged: (s) => setState(() => _female = s.first),
-              showSelectedIcon: false,
-            ),
-            const SizedBox(height: 18),
-            _field(
-              _age,
-              'Age',
-              'years',
-              (v) => _range(v, 18, 90, 'years'),
-              digitsOnly: true,
-            ),
-            const SizedBox(height: 14),
-            _field(_height, 'Height', 'cm', (v) => _range(v, 120, 230, 'cm')),
-            const SizedBox(height: 14),
-            _field(_weight, 'Weight', 'kg', (v) => _range(v, 30, 250, 'kg')),
-            const SizedBox(height: 14),
-            _field(_waist, 'Waist', 'cm', (v) => _range(v, 40, 200, 'cm')),
-            const SizedBox(height: 6),
-            const Text(
-              'Measure your waist at navel level, relaxed, after a normal breath out.',
-              style: TextStyle(color: AppColors.gray, fontSize: 12.5),
-            ),
-            const SizedBox(height: 26),
-            FilledButton(
-              onPressed: _save,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.buttonBlue,
-                minimumSize: const Size.fromHeight(54),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text('Save & see my estimate'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _field(
+  Widget _tile(
     TextEditingController controller,
     String label,
     String unit,
     String? Function(String?) validator, {
     bool digitsOnly = false,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.numberWithOptions(decimal: !digitsOnly),
-      validator: validator,
-      decoration: InputDecoration(labelText: label, suffixText: unit),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 14, 14, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: DS.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: DS.text(size: 14, weight: FontWeight.w600, color: DS.muted),
+          ),
+          TextFormField(
+            controller: controller,
+            validator: validator,
+            keyboardType: TextInputType.numberWithOptions(decimal: !digitsOnly),
+            style: DS.text(
+              size: 30,
+              weight: FontWeight.w800,
+              letterSpacing: -0.6,
+            ),
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
+              filled: false,
+              isDense: true,
+              contentPadding: const EdgeInsets.only(top: 4, bottom: 4),
+              suffixText: unit,
+              suffixStyle: DS.text(
+                size: 14,
+                weight: FontWeight.w600,
+                color: DS.muted,
+              ),
+              errorStyle: DS.text(size: 12, color: DS.redText),
+              errorMaxLines: 2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: DsBackground(
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: DsBackButton(),
+                      ),
+                      const SizedBox(height: 24),
+                      const DsTitle('My', 'measurements', size: 36),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Private. Used for your risk estimate.',
+                        style: DS.text(
+                          size: 15.5,
+                          weight: FontWeight.w500,
+                          color: DS.muted,
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: DS.softShadow,
+                        ),
+                        child: Row(
+                          children: [
+                            for (final entry in const {
+                              true: 'Female',
+                              false: 'Male',
+                            }.entries)
+                              Expanded(
+                                child: Semantics(
+                                  button: true,
+                                  selected: entry.key == _female,
+                                  label: entry.value,
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () =>
+                                        setState(() => _female = entry.key),
+                                    child: Container(
+                                      height: 54,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: entry.key == _female
+                                            ? DS.navy
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: Text(
+                                        entry.value,
+                                        style: DS.text(
+                                          size: 16.5,
+                                          weight: entry.key == _female
+                                              ? FontWeight.w700
+                                              : FontWeight.w600,
+                                          color: entry.key == _female
+                                              ? Colors.white
+                                              : DS.muted,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.7,
+                        children: [
+                          _tile(
+                            _age,
+                            'Age',
+                            'years',
+                            (v) => _range(v, 18, 90, 'years'),
+                            digitsOnly: true,
+                          ),
+                          _tile(
+                            _height,
+                            'Height',
+                            'cm',
+                            (v) => _range(v, 120, 230, 'cm'),
+                          ),
+                          _tile(
+                            _weight,
+                            'Weight',
+                            'kg',
+                            (v) => _range(v, 30, 250, 'kg'),
+                          ),
+                          _tile(
+                            _waist,
+                            'Waist',
+                            'cm',
+                            (v) => _range(v, 40, 200, 'cm'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              size: 22,
+                              color: DS.navy,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Measure your waist at belly button level.',
+                                style: DS.text(
+                                  size: 14,
+                                  weight: FontWeight.w500,
+                                  color: DS.muted,
+                                  height: 1.45,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                  child: DsPrimaryButton(label: 'Save', onPressed: _save),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

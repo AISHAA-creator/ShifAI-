@@ -6,12 +6,12 @@ import 'package:uuid/uuid.dart';
 import '../models/lab_record.dart';
 import '../providers/lab_records_provider.dart';
 import '../providers/nav_provider.dart';
-import '../theme/app_colors.dart';
-import '../widgets/step_header.dart';
+import '../theme/ds.dart';
+import '../widgets/ds_widgets.dart';
+import 'result_screen.dart';
 
-/// Manual entry / confirmation form for a lab record.
-/// Used both for typing values in directly and for reviewing OCR-extracted
-/// values before they're saved (OCR suggests, the user always confirms).
+/// Check your results (after a scan) or type values in by hand.
+/// OCR suggests, the user always confirms before anything is saved.
 class LabEntryFormScreen extends StatefulWidget {
   final double? initialGlucose;
   final GlucoseUnit? initialGlucoseUnit;
@@ -40,12 +40,10 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
   late final TextEditingController _glucoseCtrl;
   late final TextEditingController _insulinCtrl;
   late final TextEditingController _hba1cCtrl;
-  late final TextEditingController _notesCtrl;
 
   late GlucoseUnit _glucoseUnit;
   late InsulinUnit _insulinUnit;
   DateTime _date = DateTime.now();
-  final List<LabMarker> _otherMarkers = [];
   bool _saving = false;
 
   @override
@@ -60,7 +58,6 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     _hba1cCtrl = TextEditingController(
       text: widget.initialHba1c?.toString() ?? '',
     );
-    _notesCtrl = TextEditingController();
     _glucoseUnit = widget.initialGlucoseUnit ?? GlucoseUnit.gl;
     _insulinUnit = widget.initialInsulinUnit ?? InsulinUnit.uiuml;
   }
@@ -70,7 +67,6 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     _glucoseCtrl.dispose();
     _insulinCtrl.dispose();
     _hba1cCtrl.dispose();
-    _notesCtrl.dispose();
     super.dispose();
   }
 
@@ -84,16 +80,19 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
-  Future<void> _save() async {
+  double? _parse(TextEditingController c) =>
+      double.tryParse(c.text.trim().replaceAll(',', '.'));
+
+  Future<void> _confirm() async {
     if (_saving || !_formKey.currentState!.validate()) return;
 
-    final glucoseRaw = double.tryParse(_glucoseCtrl.text.replaceAll(',', '.'));
-    final insulinRaw = double.tryParse(_insulinCtrl.text.replaceAll(',', '.'));
-    final hba1cRaw = double.tryParse(_hba1cCtrl.text.replaceAll(',', '.'));
+    final glucoseRaw = _parse(_glucoseCtrl);
+    final insulinRaw = _parse(_insulinCtrl);
+    final hba1cRaw = _parse(_hba1cCtrl);
 
     if (glucoseRaw == null && insulinRaw == null && hba1cRaw == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter at least one value to save.')),
+        const SnackBar(content: Text('Enter at least one value to continue.')),
       );
       return;
     }
@@ -108,14 +107,22 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
           ? null
           : UnitConverter.insulinToUiuml(insulinRaw, _insulinUnit),
       hba1cPercent: hba1cRaw,
-      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
-      otherMarkers: List.unmodifiable(_otherMarkers),
       updatedAt: DateTime.now(),
     );
 
+    final navigator = Navigator.of(context);
+
+    // With both glucose and insulin there is a HOMA-IR to show: the result
+    // screen saves it when the person chooses. Otherwise save straight away.
+    if (record.homaIr != null) {
+      navigator.push(
+        MaterialPageRoute(builder: (_) => ResultScreen(record: record)),
+      );
+      return;
+    }
+
     final labs = context.read<LabRecordsProvider>();
     final nav = context.read<NavProvider>();
-    final navigator = Navigator.of(context);
     setState(() => _saving = true);
     try {
       await labs.addRecord(record);
@@ -125,17 +132,6 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  double? get _homaPreview {
-    final glucose = double.tryParse(_glucoseCtrl.text.replaceAll(',', '.'));
-    final insulin = double.tryParse(_insulinCtrl.text.replaceAll(',', '.'));
-    if (glucose == null || insulin == null || glucose <= 0 || insulin <= 0) {
-      return null;
-    }
-    return UnitConverter.glucoseToMgdl(glucose, _glucoseUnit) *
-        UnitConverter.insulinToUiuml(insulin, _insulinUnit) /
-        405;
   }
 
   String? _validateOptionalPositive(String? input, String label) {
@@ -148,319 +144,315 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
     return null;
   }
 
-  Future<void> _addMarker() async {
-    final nameController = TextEditingController();
-    final valueController = TextEditingController();
-    final unitController = TextEditingController();
-    final markerKey = GlobalKey<FormState>();
+  Widget _tag(bool found) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: found ? DS.green : DS.amber,
+          shape: BoxShape.circle,
+        ),
+      ),
+      const SizedBox(width: 6),
+      Text(
+        found ? 'From photo' : 'Not found',
+        style: DS.text(
+          size: 12.5,
+          weight: FontWeight.w700,
+          color: found ? DS.greenText : DS.amberText,
+        ),
+      ),
+    ],
+  );
 
-    final marker = await showDialog<LabMarker>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Add lab marker'),
-        content: Form(
-          key: markerKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+  Widget _card({
+    required String label,
+    required Widget child,
+    Widget? tag,
+    Widget? labelSuffix,
+  }) {
+    return DsCard(
+      radius: 26,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextFormField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Marker name'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter a name.'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: valueController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+              Flexible(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: label,
+                        style: DS.text(size: 15.5, weight: FontWeight.w700),
+                      ),
+                      if (labelSuffix != null) WidgetSpan(child: labelSuffix),
+                    ],
+                  ),
                 ),
-                decoration: const InputDecoration(labelText: 'Value'),
-                validator: (value) =>
-                    _validateOptionalPositive(value, 'numeric') ??
-                    ((double.tryParse((value ?? '').replaceAll(',', '.')) ==
-                            null)
-                        ? 'Enter a valid value.'
-                        : null),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: unitController,
-                decoration: const InputDecoration(labelText: 'Unit'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter a unit.'
-                    : null,
-              ),
+              ?tag,
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (!markerKey.currentState!.validate()) return;
-              Navigator.pop(
-                dialogContext,
-                LabMarker(
-                  name: nameController.text.trim(),
-                  value: double.parse(
-                    valueController.text.trim().replaceAll(',', '.'),
-                  ),
-                  unit: unitController.text.trim(),
-                ),
-              );
-            },
-            child: const Text('Add marker'),
-          ),
+          const SizedBox(height: 12),
+          child,
         ],
       ),
     );
-    nameController.dispose();
-    valueController.dispose();
-    unitController.dispose();
-    if (marker != null && mounted) {
-      setState(() => _otherMarkers.add(marker));
-    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.fromScan ? 'Scan Lab Results' : 'Add lab result'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            if (widget.fromScan) ...[
-              const StepHeader(current: 1),
-              const SizedBox(height: 16),
-            ],
-            if (widget.fromScan)
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.pastel,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info_outline, color: AppColors.navy, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Values were read from your photo. Please check them against the printed report before saving.',
-                        style: TextStyle(color: AppColors.navy, fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Date'),
-              subtitle: Text(DateFormat.yMMMd().format(_date)),
-              trailing: const Icon(Icons.calendar_today, size: 18),
-              onTap: _pickDate,
-            ),
-            const SizedBox(height: 12),
-
-            _valueWithUnitRow(
-              label: 'Fasting glucose',
-              controller: _glucoseCtrl,
-              validator: (value) => _validateOptionalPositive(value, 'glucose'),
-              onChanged: (_) => setState(() {}),
-              unitWidget: DropdownButton<GlucoseUnit>(
-                value: _glucoseUnit,
-                items: const [
-                  DropdownMenuItem(value: GlucoseUnit.gl, child: Text('g/L')),
-                  DropdownMenuItem(
-                    value: GlucoseUnit.mgdl,
-                    child: Text('mg/dL'),
-                  ),
-                  DropdownMenuItem(
-                    value: GlucoseUnit.mmoll,
-                    child: Text('mmol/L'),
-                  ),
-                ],
-                onChanged: (u) => setState(() => _glucoseUnit = u!),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            _valueWithUnitRow(
-              label: 'Fasting insulin',
-              controller: _insulinCtrl,
-              validator: (value) => _validateOptionalPositive(value, 'insulin'),
-              onChanged: (_) => setState(() {}),
-              unitWidget: DropdownButton<InsulinUnit>(
-                value: _insulinUnit,
-                items: const [
-                  DropdownMenuItem(
-                    value: InsulinUnit.uiuml,
-                    child: Text('µIU/mL'),
-                  ),
-                  DropdownMenuItem(
-                    value: InsulinUnit.pmoll,
-                    child: Text('pmol/L'),
-                  ),
-                ],
-                onChanged: (u) => setState(() => _insulinUnit = u!),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Both glucose and insulin are needed to calculate HOMA-IR.',
-              style: TextStyle(color: AppColors.gray, fontSize: 12),
-            ),
-            const SizedBox(height: 16),
-
-            _LiveHomaCard(value: _homaPreview),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _hba1cCtrl,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'HbA1c (%) — optional',
-              ),
-              validator: (value) {
-                final error = _validateOptionalPositive(value, 'HbA1c');
-                if (error != null) return error;
-                final parsed = double.tryParse(
-                  (value ?? '').trim().replaceAll(',', '.'),
-                );
-                if (parsed != null && parsed > 100) {
-                  return 'Enter HbA1c as a percentage.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            for (var index = 0; index < _otherMarkers.length; index++)
-              Card(
-                child: ListTile(
-                  title: Text(_otherMarkers[index].name),
-                  subtitle: Text(
-                    '${_otherMarkers[index].value} ${_otherMarkers[index].unit}',
-                  ),
-                  trailing: IconButton(
-                    tooltip: 'Remove marker',
-                    onPressed: () =>
-                        setState(() => _otherMarkers.removeAt(index)),
-                    icon: const Icon(Icons.close),
-                  ),
-                ),
-              ),
-            OutlinedButton.icon(
-              onPressed: _addMarker,
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text('Add Missing Lab Marker'),
-            ),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _notesCtrl,
-              decoration: const InputDecoration(labelText: 'Notes — optional'),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 28),
-
-            ElevatedButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      widget.fromScan
-                          ? 'Confirm & calculate'
-                          : 'Save & calculate',
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _valueWithUnitRow({
-    required String label,
+  Widget _valueRow({
     required TextEditingController controller,
+    required String semanticLabel,
     required FormFieldValidator<String> validator,
-    required ValueChanged<String> onChanged,
-    required Widget unitWidget,
+    required Widget units,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
+        SizedBox(
+          width: 104,
           child: TextFormField(
             controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(labelText: label),
             validator: validator,
-            onChanged: onChanged,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: DS.text(
+              size: 26,
+              weight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+            decoration: dsFieldDecoration(vertical: 15).copyWith(
+              hintText: semanticLabel,
+              hintStyle: DS.text(
+                size: 14,
+                weight: FontWeight.w600,
+                color: DS.iconMuted,
+              ),
+            ),
           ),
         ),
-        const SizedBox(width: 12),
-        Padding(padding: const EdgeInsets.only(top: 8), child: unitWidget),
+        const SizedBox(width: 10),
+        Expanded(child: units),
       ],
     );
   }
-}
-
-class _LiveHomaCard extends StatelessWidget {
-  const _LiveHomaCard({required this.value});
-
-  final double? value;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryContainer, AppColors.primary],
-        ),
-        borderRadius: BorderRadius.circular(AppRadii.bigCard),
-      ),
-      child: Row(
-        children: [
-          Expanded(
+    final scan = widget.fromScan;
+    return Scaffold(
+      body: DsBackground(
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Live HOMA-IR',
-                  style: Theme.of(context).textTheme.labelSmall
-                      ?.copyWith(color: AppColors.secondaryFixed),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const DsBackButton(),
+                          if (scan)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 9,
+                              ),
+                              decoration: BoxDecoration(
+                                color: DS.skyTint,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                'Step 2 of 2',
+                                style: DS.text(
+                                  size: 14,
+                                  weight: FontWeight.w700,
+                                  color: DS.navy,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      scan
+                          ? const DsTitle('Check your', 'results', size: 36)
+                          : const DsTitle('Add', 'result', size: 36),
+                      const SizedBox(height: 12),
+                      Text(
+                        scan
+                            ? 'Compare with your paper report.'
+                            : 'Type the values from your lab report.',
+                        style: DS.text(
+                          size: 15.5,
+                          weight: FontWeight.w500,
+                          color: DS.muted,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      _card(
+                        label: 'Fasting glucose',
+                        tag: scan ? _tag(widget.initialGlucose != null) : null,
+                        child: _valueRow(
+                          controller: _glucoseCtrl,
+                          semanticLabel: 'Value',
+                          validator: (v) =>
+                              _validateOptionalPositive(v, 'glucose'),
+                          units: DsSegmented<GlucoseUnit>(
+                            options: const {
+                              GlucoseUnit.gl: 'g/L',
+                              GlucoseUnit.mgdl: 'mg/dL',
+                              GlucoseUnit.mmoll: 'mmol/L',
+                            },
+                            value: _glucoseUnit,
+                            height: 50,
+                            onChanged: (u) => setState(() => _glucoseUnit = u),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _card(
+                        label: 'Fasting insulin',
+                        tag: scan ? _tag(widget.initialInsulin != null) : null,
+                        child: _valueRow(
+                          controller: _insulinCtrl,
+                          semanticLabel: 'Value',
+                          validator: (v) =>
+                              _validateOptionalPositive(v, 'insulin'),
+                          units: DsSegmented<InsulinUnit>(
+                            options: const {
+                              InsulinUnit.uiuml: 'uIU/mL',
+                              InsulinUnit.pmoll: 'pmol/L',
+                            },
+                            value: _insulinUnit,
+                            height: 50,
+                            onChanged: (u) => setState(() => _insulinUnit = u),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _card(
+                        label: 'HbA1c ',
+                        labelSuffix: Text(
+                          '(optional)',
+                          style: DS.text(
+                            size: 15.5,
+                            weight: FontWeight.w500,
+                            color: DS.muted,
+                          ),
+                        ),
+                        tag: scan ? _tag(widget.initialHba1c != null) : null,
+                        child: TextFormField(
+                          controller: _hba1cCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: DS.text(size: 17, weight: FontWeight.w600),
+                          decoration: dsFieldDecoration(
+                            hint: 'Add if you have it',
+                            vertical: 18,
+                            suffix: Padding(
+                              padding: const EdgeInsets.only(right: 18),
+                              child: Center(
+                                widthFactor: 1,
+                                child: Text(
+                                  '%',
+                                  style: DS.text(
+                                    size: 17,
+                                    weight: FontWeight.w700,
+                                    color: DS.muted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          validator: (value) {
+                            final error = _validateOptionalPositive(
+                              value,
+                              'HbA1c',
+                            );
+                            if (error != null) return error;
+                            final parsed = double.tryParse(
+                              (value ?? '').trim().replaceAll(',', '.'),
+                            );
+                            if (parsed != null && parsed > 100) {
+                              return 'Enter HbA1c as a percentage.';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _card(
+                        label: 'Test date',
+                        child: Semantics(
+                          button: true,
+                          label: 'Test date',
+                          child: GestureDetector(
+                            onTap: _pickDate,
+                            child: Container(
+                              height: 58,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: DS.field,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 22,
+                                    color: DS.navy,
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Text(
+                                    DateFormat.yMMMd().format(_date),
+                                    style: DS.text(
+                                      size: 17,
+                                      weight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value?.toStringAsFixed(2) ?? 'Enter both fasting values',
-                  style: Theme.of(context).textTheme.headlineSmall
-                      ?.copyWith(color: AppColors.onPrimary),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                  child: Column(
+                    children: [
+                      DsPrimaryButton(
+                        label: 'Confirm',
+                        loading: _saving,
+                        onPressed: _confirm,
+                      ),
+                      if (scan) ...[
+                        const SizedBox(height: 4),
+                        DsTextAction(
+                          'Retake photo',
+                          onPressed: () => Navigator.of(context).maybePop(),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.calculate_outlined, color: AppColors.onPrimary),
-        ],
+        ),
       ),
     );
   }

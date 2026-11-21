@@ -9,69 +9,69 @@ class AppTheme {
   static const cardShadow = Color.fromRGBO(31, 78, 121, 0.07);
 
   static ThemeData light() {
-    final textTheme = GoogleFonts.interTextTheme().copyWith(
-      displayLarge: GoogleFonts.inter(
+    final textTheme = GoogleFonts.plusJakartaSansTextTheme().copyWith(
+      displayLarge: GoogleFonts.plusJakartaSans(
         fontSize: 38,
         height: 44 / 38,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.76,
         color: AppColors.onSurface,
       ),
-      displayMedium: GoogleFonts.inter(
+      displayMedium: GoogleFonts.plusJakartaSans(
         fontSize: 32,
         height: 38 / 32,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.64,
         color: AppColors.onSurface,
       ),
-      headlineLarge: GoogleFonts.inter(
+      headlineLarge: GoogleFonts.plusJakartaSans(
         fontSize: 26,
         height: 34 / 26,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.39,
         color: AppColors.onSurface,
       ),
-      headlineMedium: GoogleFonts.inter(
+      headlineMedium: GoogleFonts.plusJakartaSans(
         fontSize: 20,
         height: 28 / 20,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
         color: AppColors.onSurface,
       ),
-      headlineSmall: GoogleFonts.inter(
+      headlineSmall: GoogleFonts.plusJakartaSans(
         fontSize: 18,
         height: 24 / 18,
         fontWeight: FontWeight.w600,
         color: AppColors.onSurface,
       ),
-      bodyLarge: GoogleFonts.inter(
+      bodyLarge: GoogleFonts.plusJakartaSans(
         fontSize: 16,
         height: 24 / 16,
         color: AppColors.onSurface,
       ),
-      bodyMedium: GoogleFonts.inter(
+      bodyMedium: GoogleFonts.plusJakartaSans(
         fontSize: 14,
         height: 20 / 14,
         color: AppColors.onSurface,
       ),
-      bodySmall: GoogleFonts.inter(
+      bodySmall: GoogleFonts.plusJakartaSans(
         fontSize: 12,
         height: 16 / 12,
         color: AppColors.onSurfaceVariant,
       ),
-      labelLarge: GoogleFonts.inter(
+      labelLarge: GoogleFonts.plusJakartaSans(
         fontSize: 14,
         height: 20 / 14,
         fontWeight: FontWeight.w600,
         color: AppColors.onSurface,
       ),
-      labelMedium: GoogleFonts.inter(
+      labelMedium: GoogleFonts.plusJakartaSans(
         fontSize: 12,
         height: 16 / 12,
         fontWeight: FontWeight.w600,
         color: AppColors.onSurfaceVariant,
       ),
-      labelSmall: GoogleFonts.inter(
+      labelSmall: GoogleFonts.plusJakartaSans(
         fontSize: 11,
         height: 14 / 11,
         fontWeight: FontWeight.w500,

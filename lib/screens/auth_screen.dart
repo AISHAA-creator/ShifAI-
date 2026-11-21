@@ -7,12 +7,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
 import '../providers/auth_provider.dart';
-import '../theme/app_colors.dart';
+import '../theme/ds.dart';
+import '../widgets/ds_widgets.dart';
+
+enum AuthStart { signIn, createAccount }
 
 enum _AuthMode { signIn, createAccount, forgotPassword, verifyEmail }
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  const AuthScreen({super.key, this.start = AuthStart.signIn});
+
+  final AuthStart start;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -24,19 +29,24 @@ class _AuthScreenState extends State<AuthScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmController = TextEditingController();
-  _AuthMode _mode = _AuthMode.signIn;
+  late _AuthMode _mode;
   String? _message;
   bool _acceptedTerms = false;
   bool _passwordVisible = false;
-  bool _confirmPasswordVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mode = widget.start == AuthStart.createAccount
+        ? _AuthMode.createAccount
+        : _AuthMode.signIn;
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -50,6 +60,11 @@ class _AuthScreenState extends State<AuthScreen> {
       if (_scrollController.hasClients) _scrollController.jumpTo(0);
     });
   }
+
+  static const _offline =
+      'Could not reach Supabase. Check your connection and try again.';
+  static const _timedOut =
+      'The request timed out. Check your connection and try again.';
 
   Future<void> _submit() async {
     if (_mode == _AuthMode.verifyEmail) {
@@ -71,6 +86,7 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _emailController.text,
             password: _passwordController.text,
           );
+          if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
           break;
         case _AuthMode.createAccount:
           if (!_acceptedTerms) {
@@ -89,6 +105,8 @@ class _AuthScreenState extends State<AuthScreen> {
               _AuthMode.verifyEmail,
               message: 'Check your email for the Supabase verification link before signing in.',
             );
+          } else if (mounted) {
+            Navigator.of(context).popUntil((r) => r.isFirst);
           }
           break;
         case _AuthMode.forgotPassword:
@@ -103,19 +121,9 @@ class _AuthScreenState extends State<AuthScreen> {
           break;
       }
     } on AuthRetryableFetchException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'Could not reach Supabase. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _offline);
     } on TimeoutException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'The request timed out. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _timedOut);
     } on AuthApiException catch (error) {
       if (!mounted) return;
       if (_mode == _AuthMode.signIn &&
@@ -137,12 +145,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } on AuthException catch (error) {
       if (mounted) setState(() => _message = error.message);
     } on ClientException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'Could not reach Supabase. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _offline);
     }
   }
 
@@ -161,28 +164,13 @@ class _AuthScreenState extends State<AuthScreen> {
         );
       }
     } on AuthRetryableFetchException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'Could not reach Supabase. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _offline);
     } on TimeoutException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'The request timed out. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _timedOut);
     } on AuthException catch (error) {
       if (mounted) setState(() => _message = error.message);
     } on ClientException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'Could not reach Supabase. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _offline);
     }
   }
 
@@ -199,11 +187,6 @@ class _AuthScreenState extends State<AuthScreen> {
     return null;
   }
 
-  String? _validateConfirmation(String? value) {
-    if (value != _passwordController.text) return 'Passwords do not match.';
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -211,253 +194,244 @@ class _AuthScreenState extends State<AuthScreen> {
     final isReset = _mode == _AuthMode.forgotPassword;
     final isVerify = _mode == _AuthMode.verifyEmail;
 
+    final title = isVerify
+        ? const DsTitle('Verify your', 'email')
+        : isReset
+        ? const DsTitle('Reset your', 'password')
+        : isCreate
+        ? const DsTitle('Create', 'account')
+        : const DsTitle('Welcome', 'back');
+
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: ListView(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-              children: [
-                Center(
-                  child: Image.asset(
-                    'assets/images/shifai_logo.png',
-                    width: 144,
-                    height: 48,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  isVerify
-                      ? 'Verify your email'
-                      : isReset
-                      ? 'Reset your password'
-                      : isCreate
-                      ? 'Create your account'
-                      : 'Welcome back',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  isVerify
-                      ? 'Follow the link sent to ${_emailController.text}.'
-                      : 'Sign in to access your ShifAI health dashboard.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.onSurfaceVariant),
-                ),
-                const SizedBox(height: 24),
-                if (!isVerify)
-                  Form(
-                    key: _formKey,
-                    child: Column(
+      body: DsBackground(
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(28, 20, 28, 12),
                       children: [
-                        if (isCreate) ...[
-                          TextFormField(
-                            key: const Key('auth-name'),
-                            controller: _nameController,
-                            textCapitalization: TextCapitalization.words,
-                            decoration: const InputDecoration(
-                              labelText: 'Name',
-                              prefixIcon: Icon(Icons.person_outline),
-                            ),
-                            validator: (value) =>
-                                (value?.trim().isEmpty ?? true)
-                                ? 'Enter your name.'
-                                : null,
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: DsBackButton(
+                            onPressed: () {
+                              if (_mode == _AuthMode.forgotPassword ||
+                                  _mode == _AuthMode.verifyEmail) {
+                                _changeMode(_AuthMode.signIn);
+                              } else {
+                                Navigator.of(context).maybePop();
+                              }
+                            },
                           ),
-                          const SizedBox(height: 14),
-                        ],
-                        TextFormField(
-                          key: const Key('auth-email'),
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email_outlined),
-                          ),
-                          validator: _validateEmail,
                         ),
-                        if (!isReset) ...[
-                          const SizedBox(height: 14),
-                          TextFormField(
-                            key: const Key('auth-password'),
-                            controller: _passwordController,
-                            obscureText: !_passwordVisible,
-                            autofillHints: isCreate
-                                ? const [AutofillHints.newPassword]
-                                : const [AutofillHints.password],
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                tooltip: _passwordVisible
-                                    ? 'Hide password'
-                                    : 'Show password',
-                                onPressed: () => setState(
-                                  () => _passwordVisible = !_passwordVisible,
-                                ),
-                                icon: Icon(
-                                  _passwordVisible
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                ),
-                              ),
-                            ),
-                            validator: isCreate ? _validatePassword : null,
+                        const SizedBox(height: 30),
+                        Align(alignment: Alignment.centerLeft, child: title),
+                        if (isVerify) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Follow the link sent to ${_emailController.text}.',
+                            style: DS.text(color: DS.muted, height: 1.5),
                           ),
                         ],
-                        if (isCreate) ...[
-                          const SizedBox(height: 14),
-                          TextFormField(
-                            key: const Key('auth-confirm-password'),
-                            controller: _confirmController,
-                            obscureText: !_confirmPasswordVisible,
-                            decoration: InputDecoration(
-                              labelText: 'Confirm password',
-                              prefixIcon: Icon(Icons.lock_reset_outlined),
-                              suffixIcon: IconButton(
-                                tooltip: _confirmPasswordVisible
-                                    ? 'Hide password'
-                                    : 'Show password',
-                                onPressed: () => setState(
-                                  () => _confirmPasswordVisible =
-                                      !_confirmPasswordVisible,
-                                ),
-                                icon: Icon(
-                                  _confirmPasswordVisible
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                ),
-                              ),
-                            ),
-                            validator: _validateConfirmation,
-                          ),
-                          const SizedBox(height: 10),
-                          CheckboxListTile(
-                            contentPadding: EdgeInsets.zero,
-                            value: _acceptedTerms,
-                            onChanged: (value) =>
-                                setState(() => _acceptedTerms = value ?? false),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            title: Wrap(
+                        const SizedBox(height: 32),
+                        if (!isVerify)
+                          Form(
+                            key: _formKey,
+                            child: Column(
                               children: [
-                                const Text('I accept the '),
-                                InkWell(
-                                  onTap: () => _showNotice(
-                                    context,
-                                    'Privacy notice',
-                                    'ShifAI stores your account profile and '
-                                        'confirmed lab values in your configured '
-                                        'Supabase project. Row-Level Security is '
-                                        'required on every user table. OCR runs '
-                                        'on-device; report images are not uploaded. '
-                                        'Do not enter data until your project and '
-                                        'policies have been reviewed.',
+                                if (isCreate) ...[
+                                  DsTextField(
+                                    key: const Key('auth-name'),
+                                    controller: _nameController,
+                                    icon: Icons.person_outline_rounded,
+                                    label: 'First name',
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    validator: (value) =>
+                                        (value?.trim().isEmpty ?? true)
+                                        ? 'Enter your name.'
+                                        : null,
                                   ),
-                                  child: const Text(
-                                    'privacy notice',
-                                    style: TextStyle(
-                                      color: AppColors.secondary,
-                                      decoration: TextDecoration.underline,
+                                  const SizedBox(height: 14),
+                                ],
+                                DsTextField(
+                                  key: const Key('auth-email'),
+                                  controller: _emailController,
+                                  icon: Icons.mail_outline_rounded,
+                                  label: 'Email',
+                                  keyboardType: TextInputType.emailAddress,
+                                  autofillHints: const [AutofillHints.email],
+                                  validator: _validateEmail,
+                                ),
+                                if (!isReset) ...[
+                                  const SizedBox(height: 14),
+                                  DsTextField(
+                                    key: const Key('auth-password'),
+                                    controller: _passwordController,
+                                    icon: Icons.lock_outline_rounded,
+                                    label: 'Password',
+                                    obscure: !_passwordVisible,
+                                    autofillHints: isCreate
+                                        ? const [AutofillHints.newPassword]
+                                        : const [AutofillHints.password],
+                                    validator: isCreate
+                                        ? _validatePassword
+                                        : null,
+                                    trailing: IconButton(
+                                      tooltip: _passwordVisible
+                                          ? 'Hide password'
+                                          : 'Show password',
+                                      onPressed: () => setState(
+                                        () => _passwordVisible =
+                                            !_passwordVisible,
+                                      ),
+                                      icon: Icon(
+                                        _passwordVisible
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: DS.iconMuted,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const Text(' and '),
-                                InkWell(
-                                  onTap: () => _showNotice(
-                                    context,
-                                    'Terms of use',
-                                    'ShifAI is a screening and awareness tool, '
-                                        'not a diagnostic device or a substitute '
-                                        'for professional medical advice. Confirm '
-                                        'results and treatment decisions with a '
-                                        'licensed clinician.',
-                                  ),
-                                  child: const Text(
-                                    'terms of use',
-                                    style: TextStyle(
-                                      color: AppColors.secondary,
-                                      decoration: TextDecoration.underline,
+                                ],
+                                if (isCreate) ...[
+                                  const SizedBox(height: 12),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: Text(
+                                        'Use at least 8 characters.',
+                                        style: DS.text(
+                                          size: 14,
+                                          color: DS.muted,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const Text('.'),
+                                  const SizedBox(height: 6),
+                                  _TermsRow(
+                                    accepted: _acceptedTerms,
+                                    onChanged: (v) =>
+                                        setState(() => _acceptedTerms = v),
+                                  ),
+                                ],
+                                if (_mode == _AuthMode.signIn)
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: DsTextAction(
+                                      'Forgot password?',
+                                      alignment: Alignment.centerRight,
+                                      onPressed: () =>
+                                          _changeMode(_AuthMode.forgotPassword),
+                                    ),
+                                  ),
                               ],
+                            ),
+                          ),
+                        if (_message != null) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: DS.skyTint,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Text(
+                              _message!,
+                              style: DS.text(
+                                size: 14,
+                                weight: FontWeight.w600,
+                                height: 1.4,
+                              ),
                             ),
                           ),
                         ],
                       ],
                     ),
                   ),
-                if (_message != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _message!,
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(color: AppColors.onSurface),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: auth.busy ? null : _submit,
-                  child: auth.busy
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(
-                          isVerify
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(28, 8, 28, 20),
+                    child: Column(
+                      children: [
+                        DsPrimaryButton(
+                          label: isVerify
                               ? 'Resend verification email'
                               : isReset
                               ? 'Send reset link'
                               : isCreate
                               ? 'Create account'
                               : 'Sign in',
+                          loading: auth.busy,
+                          onPressed: _submit,
                         ),
-                ),
-                const SizedBox(height: 8),
-                if (_mode == _AuthMode.signIn)
-                  TextButton(
-                    onPressed: () => _changeMode(_AuthMode.forgotPassword),
-                    child: const Text('Forgot password?'),
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _changeMode(
+                            isCreate
+                                ? _AuthMode.signIn
+                                : _AuthMode.createAccount,
+                          ),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 52),
+                            alignment: Alignment.center,
+                            child: Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: isCreate
+                                        ? 'Already a member? '
+                                        : 'New here? ',
+                                    style: DS.text(
+                                      size: 15.5,
+                                      weight: FontWeight.w600,
+                                      color: DS.muted,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: isCreate
+                                        ? 'Sign in'
+                                        : 'Create account',
+                                    style: DS.text(
+                                      size: 15.5,
+                                      weight: FontWeight.w800,
+                                      color: DS.navy,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                TextButton(
-                  onPressed: () => _changeMode(
-                    isCreate ? _AuthMode.signIn : _AuthMode.createAccount,
-                  ),
-                  child: Text(
-                    isCreate
-                        ? 'Already have an account? Sign in'
-                        : 'New to ShifAI? Create an account',
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+}
 
-  void _showNotice(BuildContext context, String title, String body) {
+class _TermsRow extends StatelessWidget {
+  const _TermsRow({required this.accepted, required this.onChanged});
+  final bool accepted;
+  final ValueChanged<bool> onChanged;
+
+  void _notice(BuildContext context, String title, String body) {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(body),
+        title: Text(title, style: DS.text(weight: FontWeight.w800)),
+        content: Text(body, style: DS.text(size: 15, height: 1.45)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -465,6 +439,57 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final link = DS
+        .text(size: 14, weight: FontWeight.w700, color: DS.navy)
+        .copyWith(decoration: TextDecoration.underline);
+    final plain = DS.text(size: 14, color: DS.muted);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Checkbox(
+          value: accepted,
+          activeColor: DS.navy,
+          onChanged: (v) => onChanged(v ?? false),
+        ),
+        Expanded(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text('I accept the ', style: plain),
+              GestureDetector(
+                onTap: () => _notice(
+                  context,
+                  'Privacy notice',
+                  'ShifAI stores your account profile and confirmed lab values '
+                      'in your configured Supabase project. Row-Level Security '
+                      'is required on every user table. OCR runs on-device; '
+                      'report images are not uploaded. Do not enter data until '
+                      'your project and policies have been reviewed.',
+                ),
+                child: Text('privacy notice', style: link),
+              ),
+              Text(' and ', style: plain),
+              GestureDetector(
+                onTap: () => _notice(
+                  context,
+                  'Terms of use',
+                  'ShifAI is a screening and awareness tool, not a diagnostic '
+                      'device or a substitute for professional medical advice. '
+                      'Confirm results and treatment decisions with a licensed '
+                      'clinician.',
+                ),
+                child: Text('terms of use', style: link),
+              ),
+              Text('.', style: plain),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -507,28 +532,13 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         _passwordController.text,
       );
     } on AuthRetryableFetchException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'Could not reach Supabase. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _AuthScreenState._offline);
     } on TimeoutException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'The request timed out. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _AuthScreenState._timedOut);
     } on AuthException catch (error) {
       if (mounted) setState(() => _message = error.message);
     } on ClientException {
-      if (mounted) {
-        setState(
-          () => _message =
-              'Could not reach Supabase. Check your connection and try again.',
-        );
-      }
+      if (mounted) setState(() => _message = _AuthScreenState._offline);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -537,37 +547,38 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose a new password')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'New password'),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Confirm password'),
-            ),
-            if (_message != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _message!,
-                style: const TextStyle(color: AppColors.dangerText),
+      body: DsBackground(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(28, 20, 28, 28),
+            children: [
+              const DsTitle('Choose a', 'new password'),
+              const SizedBox(height: 32),
+              DsTextField(
+                controller: _passwordController,
+                icon: Icons.lock_outline_rounded,
+                label: 'New password',
+                obscure: true,
+              ),
+              const SizedBox(height: 14),
+              DsTextField(
+                controller: _confirmController,
+                icon: Icons.lock_reset_rounded,
+                label: 'Confirm password',
+                obscure: true,
+              ),
+              if (_message != null) ...[
+                const SizedBox(height: 12),
+                Text(_message!, style: DS.text(size: 14, color: DS.redText)),
+              ],
+              const SizedBox(height: 24),
+              DsPrimaryButton(
+                label: 'Update password',
+                loading: _busy,
+                onPressed: _save,
               ),
             ],
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _busy ? null : _save,
-              child: _busy
-                  ? const CircularProgressIndicator()
-                  : const Text('Update password'),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -1,194 +1,137 @@
 import 'dart:math' as math;
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../models/lab_record.dart';
+import '../providers/appointment_provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/coaching_provider.dart';
 import '../providers/lab_records_provider.dart';
 import '../providers/nav_provider.dart';
-import '../theme/app_colors.dart';
+import '../theme/ds.dart';
 import '../utils/open_add_result.dart';
-import '../utils/platform_helper.dart';
-import '../widgets/app_header.dart';
+import '../utils/share_summary.dart';
 import '../widgets/band_style.dart';
-import '../widgets/risk_card.dart';
+import '../widgets/ds_widgets.dart';
+import 'book_screen.dart';
+import 'emergency_screen.dart';
+import 'find_doctor_screen.dart';
+import 'lab_entry_form_screen.dart';
+import 'medicine_screen.dart';
+import 'notifications_screen.dart';
+import 'search_screen.dart';
+import 'shortcuts_screen.dart';
+import 'skin_check_screen.dart';
+import 'wellness_screen.dart';
 
+/// Home. Three states, step by step:
+///  1. first visit: no result yet, no doctor
+///  2. has results, no doctor yet
+///  3. following a doctor (an appointment is booked): Doctor, Medicine,
+///     Report and Emergency shortcuts and the upcoming appointment appear.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+  static String _firstName(String displayName) {
+    final first = displayName.trim().split(RegExp(r'\s+')).first;
+    return first == 'ShifAI' || first.isEmpty ? '' : first;
+  }
+
+  static String _greeting(DateTime now) {
+    if (now.hour < 12) return 'Morning';
+    if (now.hour < 18) return 'Afternoon';
+    return 'Evening';
+  }
+
+  void _push(BuildContext context, Widget screen) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+
+  void _soon(BuildContext context, String what) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(what)));
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final provider = context.watch<LabRecordsProvider>();
-    final withHoma = provider.records
-        .where((record) => record.homaIr != null)
-        .toList();
+    final labs = context.watch<LabRecordsProvider>();
+    final appt = context.watch<AppointmentProvider>();
+    final nav = context.read<NavProvider>();
 
-    return Scaffold(
-      appBar: AppHeader(
-        title: 'Dashboard',
-        onProfileTap: () => context.read<NavProvider>().setTab(2),
-      ),
-      body: provider.loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.secondary),
-            )
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenHorizontal,
-                AppSpacing.md,
-                AppSpacing.screenHorizontal,
-                AppSpacing.xl,
-              ),
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${_greeting()}${auth.isSignedIn ? ', ${auth.displayName}' : ''}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            'أهلاً بك في شفاء',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(AppRadii.pill),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.lock_outline,
-                            size: 14,
-                            color: AppColors.secondary,
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(
-                            isMobilePlatform ? 'On-device OCR' : 'Web entry',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(color: AppColors.secondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _MetabolicAssessmentCard(records: withHoma),
-                const SizedBox(height: AppSpacing.lg),
-                const RiskCard(),
-                const SizedBox(height: AppSpacing.lg),
-                withHoma.isEmpty
-                    ? const _WelcomeCard()
-                    : _HomaCard(records: withHoma),
-                const SizedBox(height: AppSpacing.lg),
-                const _ScanCard(),
-                const SizedBox(height: AppSpacing.xl),
-                const _CoachingSection(),
-                const SizedBox(height: AppSpacing.xl),
-                Row(
-                  key: const Key('home-storage-footer'),
-                  children: [
-                    const Icon(
-                      Icons.lock_outline,
-                      size: 15,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: Text(
-                        auth.isSignedIn
-                            ? 'Your results sync to your account and stay cached for offline use.'
-                            : 'Your health metrics stay on this device.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    final withHoma = labs.records.where((r) => r.homaIr != null).toList();
+    final latest = withHoma.isEmpty ? null : withHoma.last;
+    final following = appt.followingDoctor;
+    final firstVisit = labs.records.isEmpty && !following;
+    final name = _firstName(auth.displayName);
+    final now = DateTime.now();
+    final notices = watchNotices(context);
+    final unseen = unseenCount(context, notices);
+
+    final title = firstVisit
+        ? (name.isEmpty ? 'Welcome' : 'Welcome, $name')
+        : (name.isEmpty ? _greeting(now) : '${_greeting(now)}, $name');
+
+    final actions = following
+        ? [
+            DsQuickAction(
+              icon: Icons.medical_services_outlined,
+              label: 'Doctor',
+              onTap: () => _push(context, const FindDoctorScreen()),
             ),
-    );
-  }
-}
+            DsQuickAction(
+              icon: Icons.medication_outlined,
+              label: 'Medicine',
+              onTap: () => _push(context, const MedicineScreen()),
+            ),
+            DsQuickAction(
+              icon: Icons.assignment_turned_in_outlined,
+              label: 'Report',
+              onTap: () => nav.setTab(1),
+            ),
+            DsQuickAction(
+              icon: Icons.emergency_outlined,
+              label: 'Emergency',
+              iconColor: DS.emergency,
+              onTap: () => _push(context, const EmergencyScreen()),
+            ),
+          ]
+        : [
+            DsQuickAction(
+              icon: Icons.document_scanner_outlined,
+              label: 'Scan',
+              onTap: () => openAddResult(context),
+            ),
+            DsQuickAction(
+              icon: Icons.edit_outlined,
+              label: 'Type in',
+              onTap: () => _push(context, const LabEntryFormScreen()),
+            ),
+            DsQuickAction(
+              icon: Icons.show_chart_rounded,
+              label: 'Trends',
+              onTap: () => nav.setTab(1),
+            ),
+            DsQuickAction(
+              icon: Icons.share_outlined,
+              label: 'Share',
+              onTap: () {
+                if (labs.records.isEmpty) {
+                  _soon(context, 'Add a result first, then you can share it.');
+                } else {
+                  shareSummaryOnWhatsApp(context, labs.records.last);
+                }
+              },
+            ),
+          ];
 
-class _MetabolicAssessmentCard extends StatelessWidget {
-  const _MetabolicAssessmentCard({required this.records});
-
-  final List<LabRecord> records;
-
-  @override
-  Widget build(BuildContext context) {
-    final latest = records.isEmpty ? null : records.last;
-    final value = latest?.homaIr;
-    final band = latest?.homaIrBand;
-    final progress = value == null ? 0.0 : (value / 4.5).clamp(0.0, 1.0);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
+    return DsBackground(
+      child: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
           children: [
-            Row(
-              children: [
-                const Icon(Icons.circle, size: 10, color: AppColors.secondary),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    'Metabolic Assessment',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer,
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
-                  ),
-                  child: Text(
-                    'Lab-based',
-                    style: Theme.of(context).textTheme.labelSmall
-                        ?.copyWith(color: AppColors.secondary),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 Expanded(
@@ -196,555 +139,733 @@ class _MetabolicAssessmentCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Insulin resistance indicator',
-                        style: Theme.of(context).textTheme.headlineSmall,
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: DS.text(
+                          size: 24,
+                          weight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
+                      const SizedBox(height: 3),
                       Text(
-                        value == null
-                            ? 'Add fasting glucose and insulin to calculate your HOMA-IR.'
-                            : 'Based on your latest fasting glucose and insulin values.',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        firstVisit
+                            ? "Let's look at your numbers"
+                            : 'Your health at a glance',
+                        style: DS.text(
+                          size: 14.5,
+                          weight: FontWeight.w500,
+                          color: DS.muted,
+                        ),
                       ),
-                      if (band != null) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        BandChip(band: band),
-                      ],
                     ],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                SizedBox(
-                  width: 88,
-                  height: 88,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox.expand(
-                        child: CircularProgressIndicator(
-                          value: progress,
-                          strokeWidth: 8,
-                          backgroundColor: AppColors.surfaceContainer,
-                          color: band == null
-                              ? AppColors.secondary
-                              : bandColor(band),
+                const SizedBox(width: 12),
+                Semantics(
+                  button: true,
+                  label: unseen == 0
+                      ? 'Notifications'
+                      : 'Notifications, $unseen new',
+                  child: GestureDetector(
+                    onTap: () => _push(context, const NotificationsScreen()),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: DS.navy.withValues(alpha: 0.10),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            size: 25,
+                            color: DS.ink,
+                          ),
                         ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            value?.toStringAsFixed(1) ?? '—',
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(color: AppColors.primary),
+                        if (unseen > 0)
+                          Positioned(
+                            top: -3,
+                            right: -3,
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                minWidth: 22,
+                                minHeight: 22,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                              ),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: DS.red,
+                                borderRadius: BorderRadius.circular(11),
+                                border: Border.all(color: DS.bgTop, width: 2),
+                              ),
+                              child: Text(
+                                '$unseen',
+                                style: DS.text(
+                                  size: 12,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
-                          Text(
-                            value == null ? 'HOMA-IR' : 'index',
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            Material(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(AppRadii.input),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadii.input),
-                onTap: () => context.read<NavProvider>().setTab(1),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
+            const SizedBox(height: 24),
+            Semantics(
+              button: true,
+              label: 'Search',
+              child: GestureDetector(
+                onTap: () => _push(context, const SearchScreen()),
+                child: Container(
+                  height: 56,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: DS.softShadow,
                   ),
                   child: Row(
                     children: [
                       const Icon(
-                        Icons.sync,
-                        size: 17,
-                        color: AppColors.secondary,
+                        Icons.search_rounded,
+                        size: 22,
+                        color: DS.iconMuted,
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          value == null
-                              ? 'Your result appears after you add a lab report'
-                              : 'Updated from your confirmed lab results',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      const Text(
-                        'Details  →',
-                        style: TextStyle(
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
+                      const SizedBox(width: 12),
+                      Text('Search', style: DS.text(color: DS.iconMuted)),
                     ],
                   ),
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WelcomeCard extends StatelessWidget {
-  const _WelcomeCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          children: [
-            const CircleAvatar(
-              radius: 30,
-              backgroundColor: AppColors.surfaceContainerHigh,
-              child: Icon(
-                Icons.favorite_border,
-                color: AppColors.primary,
-                size: 30,
-              ),
+            const SizedBox(height: 24),
+            DsSectionHeader(
+              'Quick actions',
+              action: 'Show all',
+              onAction: () => _push(context, const ShortcutsScreen()),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Welcome to ShifAI',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'A quiet companion for your metabolic health. Add a lab result '
-              'to see your HOMA-IR and follow changes over time.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HomaCard extends StatelessWidget {
-  const _HomaCard({required this.records});
-
-  final List<LabRecord> records;
-
-  @override
-  Widget build(BuildContext context) {
-    final latest = records.last;
-    final band = latest.homaIrBand!;
-    final recent = records.length > 5
-        ? records.sublist(records.length - 5)
-        : records;
-    final values = recent.map((record) => record.homaIr!).toList();
-
-    String? deltaText;
-    Color deltaColor = AppColors.onSurfaceVariant;
-    if (recent.length >= 2) {
-      final delta = values.last - values.first;
-      final days = recent.last.date.difference(recent.first.date).inDays;
-      final sign = delta > 0 ? '+' : (delta < 0 ? '−' : '');
-      deltaText =
-          '$sign${delta.abs().toStringAsFixed(1)} '
-          '${days >= 1 ? 'over $days days' : 'across ${recent.length} tests'}';
-      deltaColor = delta <= 0 ? AppColors.safeText : AppColors.dangerText;
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'LATEST HOMA-IR',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: AppColors.onSurfaceVariant,
-                              letterSpacing: 0.8,
-                            ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Metabolic assessment',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                BandChip(band: band),
-              ],
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: actions,
             ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  latest.homaIr!.toStringAsFixed(2),
-                  style: Theme.of(context).textTheme.displayMedium
-                      ?.copyWith(color: bandTextColor(band)),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 5),
-                  child: Text(
-                    'Optimal range: < 1.9',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: AppColors.onSurfaceVariant),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(AppRadii.card),
+            const SizedBox(height: 24),
+            if (following)
+              _Banner(
+                title: 'Keep your results up to date',
+                button: 'Scan report',
+                onTap: () => openAddResult(context),
+                doctorPhoto: appt.appointment!.doctor.photo,
+              )
+            else
+              _Banner(
+                title: firstVisit
+                    ? 'Scan your first lab report'
+                    : 'Scan your next lab report',
+                button: 'Scan now',
+                onTap: () => openAddResult(context),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            if (following) ...[
+              const SizedBox(height: 24),
+              const DsSectionHeader('Upcoming appointment'),
+              _AppointmentCard(appointment: appt.appointment!),
+            ],
+            const SizedBox(height: 24),
+            const DsSectionHeader('For you'),
+            const SizedBox(height: 4),
+            _FeatureCard(
+              icon: Icons.restaurant_outlined,
+              title: 'Eat and move',
+              subtitle: 'Food and activity tips to lower your risk',
+              onTap: () => _push(context, const WellnessScreen()),
+            ),
+            if (labs.records.isEmpty) ...[
+              const SizedBox(height: 10),
+              _FeatureCard(
+                icon: Icons.accessibility_new_rounded,
+                title: 'No blood test yet?',
+                subtitle: 'Check your skin signs and risk factors',
+                onTap: () => _push(context, const SkinCheckScreen()),
+              ),
+            ],
+            if (firstVisit) ...[
+              const SizedBox(height: 24),
+              Text(
+                'How it works',
+                style: DS.text(size: 17, weight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              const Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Recent ${values.length} tests',
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      if (deltaText != null)
-                        Flexible(
-                          child: Text(
-                            deltaText,
-                            textAlign: TextAlign.end,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: deltaColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                    ],
+                  Expanded(
+                    child: _Step(
+                      icon: Icons.photo_camera_outlined,
+                      label: 'Scan',
+                    ),
                   ),
-                  if (values.length >= 2) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    _Sparkline(values: values),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        for (var i = 0; i < values.length; i++)
-                          Flexible(
-                            child: Text(
-                              '${values[i].toStringAsFixed(1)}'
-                              '${i == values.length - 1 ? ' (latest)' : ''}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    color: i == values.length - 1
-                                        ? AppColors.primary
-                                        : AppColors.onSurfaceVariant,
-                                    fontWeight: i == values.length - 1
-                                        ? FontWeight.w700
-                                        : FontWeight.w400,
-                                  ),
-                            ),
-                          ),
-                      ],
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: _Step(
+                      icon: Icons.check_box_outlined,
+                      label: 'Check',
                     ),
-                  ] else ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Add another result to see your trend.',
-                      style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: _Step(
+                      icon: Icons.show_chart_rounded,
+                      label: 'Your score',
                     ),
-                  ],
+                  ),
                 ],
               ),
+            ],
+            if (latest != null) ...[
+              const SizedBox(height: 24),
+              DsSectionHeader(
+                'Latest result',
+                action: 'Show all',
+                onAction: () => nav.setTab(1),
+              ),
+              _LatestResultCard(record: latest, onTap: () => nav.setTab(1)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Banner extends StatelessWidget {
+  const _Banner({
+    required this.title,
+    required this.button,
+    required this.onTap,
+    this.doctorPhoto,
+  });
+  final String title;
+  final String button;
+  final VoidCallback onTap;
+  final String? doctorPhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 176),
+      decoration: BoxDecoration(
+        gradient: DS.navyGradient,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: DS.cardShadow(0.25),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned(
+            right: -30,
+            bottom: -60,
+            child: Container(
+              width: 230,
+              height: 230,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: DS.sky.withValues(alpha: 0.24),
+              ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                const Icon(
-                  Icons.event_note_outlined,
-                  size: 18,
-                  color: AppColors.secondary,
+          ),
+          if (doctorPhoto != null)
+            Positioned(
+              right: 16,
+              bottom: -3,
+              child: Container(
+                width: 128,
+                height: 163,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(64),
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    width: 3,
+                  ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(61),
+                  ),
+                  child: Image.asset(
+                    doctorPhoto!,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.7),
+                    semanticLabel: 'Your doctor',
+                  ),
+                ),
+              ),
+            )
+          else
+            Positioned(
+              right: 26,
+              top: 26,
+              child: Transform.rotate(
+                angle: 7 * math.pi / 180,
+                child: const _ReportMock(),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 170),
                   child: Text(
-                    'Last result: ${DateFormat.yMMMd().format(latest.date)}',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    title,
+                    style: DS.text(
+                      size: 21,
+                      weight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Semantics(
+                  button: true,
+                  label: button,
+                  child: GestureDetector(
+                    onTap: onTap,
+                    child: Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            button,
+                            style: DS.text(
+                              size: 15,
+                              weight: FontWeight.w700,
+                              color: DS.navy,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _Sparkline extends StatelessWidget {
-  const _Sparkline({required this.values});
+class _ReportMock extends StatelessWidget {
+  const _ReportMock();
 
-  final List<double> values;
+  Widget _row(double a, double b, {bool tint = false}) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+    decoration: BoxDecoration(
+      color: tint ? DS.skyTint : null,
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Container(
+          width: a,
+          height: 5,
+          decoration: BoxDecoration(
+            color: tint ? DS.sky : const Color(0xFFD8E3EE),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        Container(
+          width: b,
+          height: 5,
+          decoration: BoxDecoration(
+            color: tint ? DS.navy : const Color(0xFFC7D6E6),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+      ],
+    ),
+  );
 
   @override
-  Widget build(BuildContext context) {
-    final low = values.reduce(math.min);
-    final high = values.reduce(math.max);
-    final padding = math.max(0.3, (high - low) * 0.3);
-
-    return SizedBox(
-      height: 58,
-      child: LineChart(
-        LineChartData(
-          minY: low - padding,
-          maxY: high + padding,
-          gridData: const FlGridData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
-          lineTouchData: const LineTouchData(enabled: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: [
-                for (var i = 0; i < values.length; i++)
-                  FlSpot(i.toDouble(), values[i]),
-              ],
-              isCurved: true,
-              color: AppColors.secondary,
-              barWidth: 2.5,
-              dotData: FlDotData(
-                getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
-                  radius: 4,
-                  color: AppColors.surfaceContainerLowest,
-                  strokeColor: AppColors.secondary,
-                  strokeWidth: 2,
-                ),
-              ),
-            ),
-          ],
+  Widget build(BuildContext context) => Container(
+    width: 120,
+    height: 170,
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x4D001E3C),
+          blurRadius: 28,
+          offset: Offset(0, 14),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 66,
+          height: 7,
+          decoration: BoxDecoration(
+            color: const Color(0xFFC7D6E6),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 9),
+        Container(
+          width: 105,
+          height: 4,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE3ECF5),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(height: 9),
+        _row(44, 18, tint: true),
+        const SizedBox(height: 9),
+        _row(54, 16),
+        const SizedBox(height: 9),
+        _row(36, 18, tint: true),
+      ],
+    ),
+  );
 }
 
-class _ScanCard extends StatelessWidget {
-  const _ScanCard();
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: AppColors.secondaryFixed.withValues(alpha: 0.38),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        onTap: () => openAddResult(context),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Row(
+  Widget build(BuildContext context) => DsCard(
+    radius: 24,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    onTap: onTap,
+    child: Row(
+      children: [
+        DsIconBadge(icon: icon, size: 48),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(AppRadii.input),
-                ),
-                child: Icon(
-                  isMobilePlatform
-                      ? Icons.document_scanner_outlined
-                      : Icons.edit_note_rounded,
-                  color: AppColors.surfaceContainerLowest,
-                  size: 26,
+              Text(title, style: DS.text(size: 16, weight: FontWeight.w800)),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: DS.text(
+                  size: 13.5,
+                  weight: FontWeight.w500,
+                  color: DS.muted,
+                  height: 1.35,
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right_rounded, color: DS.iconMuted),
+      ],
+    ),
+  );
+}
+
+class _Step extends StatelessWidget {
+  const _Step({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      boxShadow: DS.softShadow,
+    ),
+    child: Column(
+      children: [
+        DsIconBadge(icon: icon, size: 42),
+        const SizedBox(height: 10),
+        Text(label, style: DS.text(size: 14, weight: FontWeight.w700)),
+      ],
+    ),
+  );
+}
+
+class _AppointmentCard extends StatelessWidget {
+  const _AppointmentCard({required this.appointment});
+  final Appointment appointment;
+
+  Future<void> _cancel(BuildContext context) async {
+    final provider = context.read<AppointmentProvider>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Cancel this appointment?',
+          style: DS.text(weight: FontWeight.w800),
+        ),
+        content: Text(
+          'Your doctor will no longer see your results.',
+          style: DS.text(size: 15, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep it'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Cancel appointment',
+              style: TextStyle(color: DS.redText),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await provider.cancel();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final doctor = appointment.doctor;
+    Widget info(IconData icon, String text) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF44546A)),
+        const SizedBox(width: 7),
+        Text(
+          text,
+          style: DS.text(
+            size: 13.5,
+            weight: FontWeight.w600,
+            color: const Color(0xFF44546A),
+          ),
+        ),
+      ],
+    );
+
+    return DsCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              DsDoctorAvatar(asset: doctor.photo, size: 56),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isMobilePlatform
-                          ? 'Scan a lab report'
-                          : 'Add a lab result',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(color: AppColors.primary),
+                      doctor.name,
+                      style: DS.text(size: 16, weight: FontWeight.w800),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: 2),
                     Text(
-                      isMobilePlatform
-                          ? 'Processed on your device'
-                          : 'Enter glucose and insulin to calculate HOMA-IR',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      doctor.specialty,
+                      style: DS.text(
+                        size: 14,
+                        weight: FontWeight.w500,
+                        color: DS.muted,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              const CircleAvatar(
-                radius: 22,
-                backgroundColor: AppColors.surface,
-                child: Icon(Icons.arrow_forward, color: AppColors.primary),
+              const DsPill(
+                'Upcoming',
+                background: DS.greenTint,
+                foreground: DS.greenText,
+                size: 12.5,
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              info(
+                Icons.calendar_today_outlined,
+                DateFormat('d MMM, y').format(appointment.date),
+              ),
+              info(Icons.schedule_rounded, formatSlotTime(appointment.time)),
+              info(Icons.place_outlined, 'Clinic'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: DsOutlineButton(
+                  label: 'Cancel',
+                  height: 52,
+                  onPressed: () => _cancel(context),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: DsOutlineButton(
+                  label: 'Reschedule',
+                  height: 52,
+                  color: DS.navy,
+                  fill: DS.skyTint,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BookScreen(doctor: doctor),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class _Tip {
-  const _Tip(this.icon, this.title, this.text);
-
-  final IconData icon;
-  final String title;
-  final String text;
-}
-
-class _CoachingSection extends StatefulWidget {
-  const _CoachingSection();
-
-  @override
-  State<_CoachingSection> createState() => _CoachingSectionState();
-}
-
-class _CoachingSectionState extends State<_CoachingSection> {
-  static const tips = [
-    _Tip(
-      Icons.directions_walk,
-      'Post-meal glucose blunter',
-      'A 10-minute walk after lunch can help reduce your post-meal glucose spike.',
-    ),
-    _Tip(
-      Icons.grain,
-      'Glycemic satiety',
-      'Try whole grain or sourdough instead of refined bread at dinner.',
-    ),
-  ];
+class _LatestResultCard extends StatelessWidget {
+  const _LatestResultCard({required this.record, required this.onTap});
+  final LabRecord record;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final coaching = context.watch<CoachingProvider>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.psychology_outlined, color: AppColors.secondary),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                "Today's micro-coaching",
-                style: Theme.of(context).textTheme.headlineSmall,
+    final homa = record.homaIr!;
+    final band = record.homaIrBand!;
+    return DsCard(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 76,
+            height: 76,
+            child: CustomPaint(
+              painter: _RingPainter(
+                progress: (homa / 4.5).clamp(0.04, 1.0),
+                color: bandColor(band),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        for (var i = 0; i < tips.length; i++) ...[
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(AppRadii.input),
-                    ),
-                    child: Icon(tips[i].icon, color: AppColors.secondary),
+              child: Center(
+                child: Text(
+                  homa.toStringAsFixed(1),
+                  style: DS.text(
+                    size: 22,
+                    weight: FontWeight.w800,
+                    letterSpacing: -0.4,
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tips[i].title,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(color: AppColors.secondary),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          tips[i].text,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  OutlinedButton.icon(
-                    onPressed: () => coaching.toggle(
-                      i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
-                    ),
-                    icon: Icon(
-                      coaching.isCompleted(
-                            i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
-                          )
-                          ? Icons.check_circle
-                          : Icons.check,
-                      size: 18,
-                    ),
-                    label: Text(
-                      coaching.isCompleted(
-                            i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
-                          )
-                          ? 'Saved'
-                          : 'Done',
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(48, 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      backgroundColor:
-                          coaching.isCompleted(
-                            i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
-                          )
-                          ? AppColors.emerald700
-                          : AppColors.surfaceContainer,
-                      foregroundColor:
-                          coaching.isCompleted(
-                            i == 0 ? 'post_meal_walk' : 'whole_grain_swap',
-                          )
-                          ? AppColors.surfaceContainerLowest
-                          : AppColors.primary,
-                      side: BorderSide.none,
-                      textStyle: Theme.of(context).textTheme.labelMedium,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-          if (i != tips.length - 1) const SizedBox(height: AppSpacing.sm),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: BandChip(band: band),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'HOMA-IR, ${DateFormat.yMMMd().format(record.date)}',
+                  style: DS.text(
+                    size: 14,
+                    weight: FontWeight.w500,
+                    color: DS.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 24,
+            color: DS.iconMuted,
+          ),
         ],
-      ],
+      ),
     );
   }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter({required this.progress, required this.color});
+  final double progress;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const stroke = 9.0;
+    final rect = Rect.fromLTWH(
+      stroke / 2,
+      stroke / 2,
+      size.width - stroke,
+      size.height - stroke,
+    );
+    canvas.drawArc(
+      rect,
+      0,
+      math.pi * 2,
+      false,
+      Paint()
+        ..color = DS.skyTint
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke,
+    );
+    canvas.drawArc(
+      rect,
+      -math.pi / 2,
+      math.pi * 2 * progress,
+      false,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingPainter old) =>
+      old.progress != progress || old.color != color;
 }

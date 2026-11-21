@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../models/lab_record.dart';
-import '../theme/app_colors.dart';
+import '../theme/ds.dart';
+import 'ds_widgets.dart';
 
+/// Colors of a HOMA-IR band in the agreed design:
+/// green (optimal, normal), amber (borderline), red (insulin resistance likely).
 Color bandColor(HomaIrBand band) {
   switch (band) {
     case HomaIrBand.optimal:
     case HomaIrBand.normal:
-      return AppColors.safe;
+      return DS.green;
     case HomaIrBand.earlyResistance:
-      return AppColors.warning;
+      return DS.amber;
     case HomaIrBand.significantResistance:
-      return AppColors.danger;
+      return DS.red;
   }
 }
 
@@ -19,11 +22,11 @@ Color bandBackground(HomaIrBand band) {
   switch (band) {
     case HomaIrBand.optimal:
     case HomaIrBand.normal:
-      return AppColors.safeBg;
+      return DS.greenTint;
     case HomaIrBand.earlyResistance:
-      return AppColors.warningBg;
+      return DS.amberTint;
     case HomaIrBand.significantResistance:
-      return AppColors.dangerBg;
+      return DS.redTint;
   }
 }
 
@@ -31,11 +34,11 @@ Color bandTextColor(HomaIrBand band) {
   switch (band) {
     case HomaIrBand.optimal:
     case HomaIrBand.normal:
-      return AppColors.safeText;
+      return DS.greenText;
     case HomaIrBand.earlyResistance:
-      return AppColors.warningText;
+      return DS.amberText;
     case HomaIrBand.significantResistance:
-      return AppColors.dangerText;
+      return DS.redText;
   }
 }
 
@@ -50,49 +53,24 @@ String bandExplanation(HomaIrBand band) {
           'balanced meals help keep it there.';
     case HomaIrBand.earlyResistance:
       return 'Your body is producing more insulin than usual to manage blood '
-          'glucose. The encouraging news: this stage often responds well to '
-          'everyday lifestyle changes.';
+          'glucose. This stage often responds well to everyday lifestyle '
+          'changes.';
     case HomaIrBand.significantResistance:
       return 'Your body needs a lot of insulin to manage blood glucose. This '
-          'is worth discussing with your doctor. ShifAI cannot diagnose you, '
-          'and this stage can still respond to lifestyle changes.';
+          'is worth discussing with your doctor. ShifAI cannot diagnose you.';
   }
 }
 
 class BandChip extends StatelessWidget {
   final HomaIrBand band;
-  const BandChip({super.key, required this.band});
+  final double size;
+  const BandChip({super.key, required this.band, this.size = 13});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: bandBackground(band),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: bandColor(band),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            band.label,
-            style: TextStyle(
-              color: bandTextColor(band),
-              fontWeight: FontWeight.w600,
-              fontSize: 12.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => DsPill(
+    band.label,
+    background: bandBackground(band),
+    foreground: bandTextColor(band),
+    size: size,
+  );
 }

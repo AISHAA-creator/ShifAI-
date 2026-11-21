@@ -6,124 +6,343 @@ import 'package:supabase_flutter/supabase_flutter.dart' show AuthException;
 import '../providers/auth_provider.dart';
 import '../providers/lab_records_provider.dart';
 import '../providers/profile_provider.dart';
-import '../theme/app_colors.dart';
+import '../providers/settings_provider.dart';
+import '../services/risk_model.dart';
+import '../theme/ds.dart';
+import '../widgets/ds_widgets.dart';
 import 'profile_form_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  void _soon(BuildContext context, String what) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(what)));
+  }
+
+  void _privacy(BuildContext context, AuthProvider auth) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Your privacy', style: DS.text(weight: FontWeight.w800)),
+        content: Text(
+          auth.isSignedIn
+              ? 'Your confirmed lab values sync to your Supabase account and '
+                    'stay cached on this device for offline use. Photos are '
+                    'read on your phone and are not uploaded. Your body '
+                    'measurements stay on this device.'
+              : 'No account is active. Results and measurements stay on this '
+                    'device and are not uploaded. Photos are read on your '
+                    'phone.',
+          style: DS.text(size: 15, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _language(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Language', style: DS.text(weight: FontWeight.w800)),
+        content: Text(
+          'ShifAI is in English for now. French and Arabic are the next '
+          'languages to be added.',
+          style: DS.text(size: 15, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _textSize(BuildContext context) async {
+    final settings = context.read<SettingsProvider>();
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: DS.bgTop,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Text size',
+                style: DS.text(size: 24, weight: FontWeight.w800),
+              ),
+              const SizedBox(height: 14),
+              for (final entry in SettingsProvider.textSizes.entries)
+                Semantics(
+                  button: true,
+                  selected: entry.key == settings.textScale,
+                  label: entry.value,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      settings.setTextScale(entry.key);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 56),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.value,
+                              style: DS.text(
+                                size: 16.5 * entry.key,
+                                weight: entry.key == settings.textScale
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: entry.key == settings.textScale
+                                    ? DS.navy
+                                    : DS.ink,
+                              ),
+                            ),
+                          ),
+                          if (entry.key == settings.textScale)
+                            const Icon(Icons.check_rounded, color: DS.navy),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      await context.read<AuthProvider>().signOut();
+    } on AuthException catch (error) {
+      if (context.mounted) _soon(context, error.message);
+    } on ClientException {
+      if (context.mounted) {
+        _soon(context, 'Could not reach Supabase. Try again when online.');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        children: [
-          SizedBox(height: 8),
-          const Center(
-            child: CircleAvatar(
-              radius: 42,
-              backgroundColor: AppColors.pastel,
-              child: Icon(
-                Icons.person_outline_rounded,
-                size: 44,
-                color: AppColors.buttonBlue,
+    final labs = context.watch<LabRecordsProvider>();
+    final profileProvider = context.watch<ProfileProvider>();
+    final p = profileProvider.profile;
+    final assessment = profileProvider.assessment;
+
+    final display = auth.displayName == 'ShifAI member' ? '' : auth.displayName;
+    final initial = (display.isNotEmpty ? display : (auth.email ?? 'S'))
+        .characters
+        .first
+        .toUpperCase();
+    final name = auth.isSignedIn
+        ? (display.isNotEmpty ? display : 'ShifAI member')
+        : 'This device';
+
+    return DsBackground(
+      child: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+          children: [
+            const DsTitle('Your', 'profile', size: 38),
+            const SizedBox(height: 22),
+            DsCard(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: DS.navy,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      initial,
+                      style: DS.text(
+                        size: 26,
+                        weight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DS.text(
+                            size: 20,
+                            weight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          auth.email ?? 'Not signed in',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DS.text(
+                            size: 14,
+                            weight: FontWeight.w500,
+                            color: DS.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (auth.isSignedIn)
+                    DsPill(
+                      labs.syncError == null ? 'Synced' : 'Sync paused',
+                      background: labs.syncError == null
+                          ? DS.greenTint
+                          : DS.amberTint,
+                      foreground: labs.syncError == null
+                          ? DS.greenText
+                          : DS.amberText,
+                      dot: labs.syncError == null ? DS.green : DS.amber,
+                      size: 12.5,
+                    )
+                  else
+                    const DsPill(
+                      'On device',
+                      background: DS.skyTint,
+                      foreground: DS.navy,
+                      size: 12.5,
+                    ),
+                ],
               ),
             ),
-          ),
-          SizedBox(height: 12),
-          Center(
-            child: Text(
-              auth.isSignedIn ? auth.displayName : 'Local-only preview',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.navy,
+            const SizedBox(height: 22),
+            DsSectionHeader(
+              'My measurements',
+              action: p == null ? 'Add' : 'Edit',
+              onAction: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfileFormScreen()),
               ),
             ),
-          ),
-          if (auth.email != null) ...[
-            const SizedBox(height: 4),
+            if (p == null)
+              DsCard(
+                radius: 24,
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Add your age, height, weight and waist to get a risk '
+                  'estimate. No blood test needed.',
+                  style: DS.text(
+                    size: 14.5,
+                    weight: FontWeight.w500,
+                    color: DS.muted,
+                    height: 1.5,
+                  ),
+                ),
+              )
+            else
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 2.2,
+                children: [
+                  _Tile('Age', '${p.age}'),
+                  _Tile('Sex', p.female ? 'Female' : 'Male'),
+                  _Tile('Height', p.heightCm.toStringAsFixed(0), unit: 'cm'),
+                  _Tile('Weight', p.weightKg.toStringAsFixed(0), unit: 'kg'),
+                ],
+              ),
+            if (assessment != null) ...[
+              const SizedBox(height: 12),
+              _RiskRow(assessment: assessment),
+            ],
+            const SizedBox(height: 22),
+            DsCard(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              child: Column(
+                children: [
+                  _SettingRow(
+                    icon: Icons.language_rounded,
+                    label: 'Language',
+                    value: 'English',
+                    onTap: () => _language(context),
+                  ),
+                  const Divider(height: 1, color: DS.divider),
+                  _SettingRow(
+                    glyph: 'Aa',
+                    label: 'Text size',
+                    value: context.watch<SettingsProvider>().textSizeLabel,
+                    onTap: () => _textSize(context),
+                  ),
+                  const Divider(height: 1, color: DS.divider),
+                  _SettingRow(
+                    icon: Icons.lock_outline_rounded,
+                    label: 'Privacy',
+                    onTap: () => _privacy(context, auth),
+                  ),
+                  if (auth.isSignedIn) ...[
+                    const Divider(height: 1, color: DS.divider),
+                    _SettingRow(
+                      icon: Icons.file_download_outlined,
+                      label: 'Import local-only results',
+                      onTap: () => _importLocalRecords(context),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (auth.isSignedIn) ...[
+              const SizedBox(height: 22),
+              DsOutlineButton(
+                label: auth.busy ? 'Signing out…' : 'Sign out',
+                icon: Icons.logout_rounded,
+                color: const Color(0xFFB3261E),
+                iconColor: const Color(0xFFB3261E),
+                onPressed: auth.busy ? null : () => _signOut(context),
+              ),
+            ],
+            const SizedBox(height: 18),
             Center(
               child: Text(
-                auth.email!,
-                style: const TextStyle(color: AppColors.gray),
+                'ShifAI is a screening tool, not a diagnosis.\n'
+                'Please review your results with your doctor.',
+                textAlign: TextAlign.center,
+                style: DS.text(
+                  size: 13.5,
+                  weight: FontWeight.w500,
+                  color: DS.muted,
+                  height: 1.5,
+                ),
               ),
             ),
           ],
-          if (auth.isSignedIn) ...[
-            const SizedBox(height: 18),
-            OutlinedButton.icon(
-              onPressed: () => _importLocalRecords(context),
-              icon: const Icon(Icons.file_download_outlined),
-              label: const Text('Import local-only results'),
-            ),
-          ],
-          SizedBox(height: 22),
-          _MeasurementsCard(),
-          SizedBox(height: 10),
-          _InfoCard(
-            icon: auth.isSignedIn
-                ? Icons.cloud_done_outlined
-                : Icons.phone_android,
-            title: auth.isSignedIn
-                ? 'Account-backed storage'
-                : 'Local-only storage',
-            text: auth.isSignedIn
-                ? 'Your confirmed lab values sync to your Supabase account and '
-                      'remain cached on this device for offline access. Your '
-                      'body measurements stay on this device.'
-                : 'No account or cloud connection is active. Results remain '
-                      'on this device and are not uploaded.',
-          ),
-          SizedBox(height: 10),
-          const _InfoCard(
-            icon: Icons.swap_horiz_rounded,
-            title: 'Units are handled for you',
-            text:
-                'Glucose in g/L, mg/dL or mmol/L and insulin in µIU/mL or '
-                'pmol/L are converted automatically.',
-          ),
-          SizedBox(height: 10),
-          const _InfoCard(
-            icon: Icons.info_outline,
-            title: 'About ShifAI',
-            text:
-                'ShifAI is a risk-awareness tool, not a diagnosis. Always '
-                'confirm results with your doctor.',
-          ),
-          if (auth.isSignedIn) ...[
-            const SizedBox(height: 22),
-            OutlinedButton.icon(
-              onPressed: auth.busy
-                  ? null
-                  : () async {
-                      try {
-                        await context.read<AuthProvider>().signOut();
-                      } on AuthException catch (error) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(error.message)),
-                          );
-                        }
-                      } on ClientException {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Could not reach Supabase. Try again when online.',
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    },
-              icon: const Icon(Icons.logout),
-              label: Text(auth.busy ? 'Signing out…' : 'Sign out'),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -133,21 +352,21 @@ class ProfileScreen extends StatelessWidget {
     final count = await provider.guestRecordCount();
     if (!context.mounted) return;
     if (count == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('There are no local-only results to import.'),
-        ),
-      );
+      _soon(context, 'There are no local-only results to import.');
       return;
     }
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Import local results?'),
+        title: Text(
+          'Import local results?',
+          style: DS.text(weight: FontWeight.w800),
+        ),
         content: Text(
           '$count local result${count == 1 ? '' : 's'} will be copied to this '
           'signed-in account. Existing account records will not be replaced.',
+          style: DS.text(size: 15, height: 1.45),
         ),
         actions: [
           TextButton(
@@ -165,159 +384,205 @@ class ProfileScreen extends StatelessWidget {
 
     final imported = await provider.importGuestRecordsToAccount();
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            imported == 0
-                ? 'Those local results are already in this account.'
-                : provider.syncError == null
-                ? '$imported result${imported == 1 ? '' : 's'} synced to this account.'
-                : '$imported result${imported == 1 ? '' : 's'} saved locally; cloud sync will retry.',
-          ),
-        ),
+      _soon(
+        context,
+        imported == 0
+            ? 'Those local results are already in this account.'
+            : provider.syncError == null
+            ? '$imported result${imported == 1 ? '' : 's'} synced to this account.'
+            : '$imported result${imported == 1 ? '' : 's'} saved locally; cloud sync will retry.',
       );
     }
   }
 }
 
-class _MeasurementsCard extends StatelessWidget {
-  const _MeasurementsCard();
+class _Tile extends StatelessWidget {
+  const _Tile(this.label, this.value, {this.unit});
+  final String label;
+  final String value;
+  final String? unit;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      boxShadow: DS.softShadow,
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: DS.text(size: 13, weight: FontWeight.w600, color: DS.muted),
+        ),
+        const SizedBox(height: 2),
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: value,
+                style: DS.text(
+                  size: 21,
+                  weight: FontWeight.w800,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              if (unit != null)
+                TextSpan(
+                  text: ' $unit',
+                  style: DS.text(
+                    size: 14,
+                    weight: FontWeight.w600,
+                    color: DS.muted,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Estimated risk from body measurements (the on-device logistic model).
+class _RiskRow extends StatelessWidget {
+  const _RiskRow({required this.assessment});
+  final RiskAssessment assessment;
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<ProfileProvider>();
-    final p = provider.profile;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    final band = assessment.band;
+    final color = switch (band) {
+      RiskBand.low => DS.green,
+      RiskBand.moderate => DS.amber,
+      RiskBand.high => DS.red,
+    };
+    return DsCard(
+      radius: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: AppColors.pastel,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.straighten_rounded,
-                    color: AppColors.buttonBlue,
+                Text(
+                  'Estimated risk',
+                  style: DS.text(
+                    size: 13.5,
+                    weight: FontWeight.w600,
+                    color: DS.muted,
                   ),
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Text(
-                    'Your measurements',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
-                      fontSize: 15,
-                    ),
-                  ),
+                const SizedBox(height: 2),
+                Text(
+                  band.label.replaceAll(' risk', ''),
+                  style: DS.text(size: 19, weight: FontWeight.w800),
                 ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ProfileFormScreen(),
-                    ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: assessment.probability.clamp(0.02, 1.0),
+                    minHeight: 8,
+                    color: color,
+                    backgroundColor: DS.skyTint,
                   ),
-                  child: Text(p == null ? 'Add' : 'Edit'),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            if (p == null)
-              const Text(
-                'Add your age, height, weight and waist to get an insulin '
-                'resistance risk estimate. No blood test needed.',
-                style: TextStyle(
-                  color: AppColors.gray,
-                  height: 1.35,
-                  fontSize: 13.5,
-                ),
-              )
-            else ...[
-              Text(
-                '${p.female ? 'Female' : 'Male'}, ${p.age} years  •  '
-                '${p.heightCm.toStringAsFixed(0)} cm  •  ${p.weightKg.toStringAsFixed(0)} kg  •  '
-                'waist ${p.waistCm.toStringAsFixed(0)} cm',
-                style: const TextStyle(
-                  color: AppColors.text,
-                  height: 1.4,
-                  fontSize: 13.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'BMI ${p.bmi.toStringAsFixed(1)}  •  waist-to-height ${p.waistToHeight.toStringAsFixed(2)}',
-                style: const TextStyle(color: AppColors.gray, fontSize: 13),
-              ),
-            ],
-          ],
-        ),
+          ),
+          const SizedBox(width: 18),
+          Text(
+            '${assessment.percent}%',
+            style: DS.text(
+              size: 30,
+              weight: FontWeight.w800,
+              color: DS.navy,
+              letterSpacing: -1,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String text;
-  const _InfoCard({
-    required this.icon,
-    required this.title,
-    required this.text,
+class _SettingRow extends StatelessWidget {
+  const _SettingRow({
+    this.icon,
+    this.glyph,
+    required this.label,
+    this.value,
+    required this.onTap,
   });
+  final IconData? icon;
+  final String? glyph;
+  final String label;
+  final String? value;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 68),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: AppColors.pastel,
-                borderRadius: BorderRadius.circular(12),
+            if (icon != null)
+              DsIconBadge(icon: icon!, size: 42)
+            else
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: DS.skyTint,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  glyph!,
+                  style: DS.text(
+                    size: 15,
+                    weight: FontWeight.w800,
+                    color: DS.navy,
+                  ),
+                ),
               ),
-              child: Icon(icon, color: AppColors.buttonBlue),
-            ),
             const SizedBox(width: 14),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    text,
-                    style: const TextStyle(
-                      color: AppColors.gray,
-                      height: 1.35,
-                      fontSize: 13.5,
-                    ),
-                  ),
-                ],
+              child: Text(
+                label,
+                style: DS.text(size: 16, weight: FontWeight.w600),
               ),
+            ),
+            if (value != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Text(
+                  value!,
+                  style: DS.text(
+                    size: 14.5,
+                    weight: FontWeight.w600,
+                    color: DS.muted,
+                  ),
+                ),
+              ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 22,
+              color: DS.iconMuted,
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

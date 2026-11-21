@@ -2,18 +2,16 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/lab_record.dart';
 import '../providers/lab_records_provider.dart';
-import '../providers/nav_provider.dart';
-import '../theme/app_colors.dart';
+import '../theme/ds.dart';
 import '../utils/open_add_result.dart';
-import '../widgets/app_header.dart';
+import '../utils/share_summary.dart';
 import '../widgets/band_style.dart';
+import '../widgets/ds_widgets.dart';
 
 enum TrendMetric { homaIr, glucose, hba1c, insulin }
 
@@ -84,57 +82,19 @@ class TrendsScreen extends StatefulWidget {
 class _TrendsScreenState extends State<TrendsScreen> {
   TrendMetric _metric = TrendMetric.homaIr;
 
-  Future<void> _shareSummary(LabRecord latest) async {
-    final text = StringBuffer('My ShifAI summary\n');
-    if (latest.homaIr != null) {
-      text.writeln(
-        'HOMA-IR: ${latest.homaIr!.toStringAsFixed(2)} '
-        '(${latest.homaIrBand!.label}) on ${DateFormat.yMMMd().format(latest.date)}',
-      );
-    } else {
-      text.writeln('Result from ${DateFormat.yMMMd().format(latest.date)}');
-    }
-    if (latest.fastingGlucoseMgdl != null) {
-      text.writeln(
-        'Fasting glucose: ${latest.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
-      );
-    }
-    if (latest.fastingInsulinUiuml != null) {
-      text.writeln(
-        'Fasting insulin: ${latest.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL',
-      );
-    }
-    if (latest.hba1cPercent != null) {
-      text.writeln('HbA1c: ${latest.hba1cPercent!.toStringAsFixed(1)}%');
-    }
-    text.write('Screening tool only, not medical advice.');
-
-    final uri = Uri.parse(
-      'https://wa.me/?text=${Uri.encodeComponent(text.toString())}',
-    );
-    var opened = false;
-    try {
-      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } on PlatformException {
-      opened = false;
-    } on MissingPluginException {
-      opened = false;
-    }
-    if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't open WhatsApp on this device.")),
-      );
-    }
-  }
-
   Future<void> _confirmDelete(LabRecord record) async {
     final provider = context.read<LabRecordsProvider>();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete this result?'),
-        content: const Text(
-          'It will be removed from your history and synced to your account when online.',
+        title: Text(
+          'Delete this result?',
+          style: DS.text(weight: FontWeight.w800),
+        ),
+        content: Text(
+          'It will be removed from your history and synced to your account '
+          'when online.',
+          style: DS.text(size: 15, height: 1.45),
         ),
         actions: [
           TextButton(
@@ -143,16 +103,86 @@ class _TrendsScreenState extends State<TrendsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: AppColors.danger),
-            ),
+            child: const Text('Delete', style: TextStyle(color: DS.redText)),
           ),
         ],
       ),
     );
     if (ok == true) await provider.deleteRecord(record.id);
   }
+
+  void _openDetails(LabRecord record) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: DS.bgTop,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              DateFormat.yMMMMd().format(record.date),
+              style: DS.text(size: 22, weight: FontWeight.w800),
+            ),
+            const SizedBox(height: 14),
+            if (record.homaIr != null)
+              Row(
+                children: [
+                  Text(
+                    record.homaIr!.toStringAsFixed(2),
+                    style: DS.text(size: 34, weight: FontWeight.w800),
+                  ),
+                  const SizedBox(width: 12),
+                  BandChip(band: record.homaIrBand!),
+                ],
+              ),
+            const SizedBox(height: 12),
+            if (record.fastingGlucoseMgdl != null)
+              _detail(
+                'Fasting glucose',
+                '${record.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
+              ),
+            if (record.fastingInsulinUiuml != null)
+              _detail(
+                'Fasting insulin',
+                '${record.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL',
+              ),
+            if (record.hba1cPercent != null)
+              _detail('HbA1c', '${record.hba1cPercent!.toStringAsFixed(1)} %'),
+            const SizedBox(height: 18),
+            DsOutlineButton(
+              label: 'Delete this result',
+              color: DS.redText,
+              iconColor: DS.redText,
+              icon: Icons.delete_outline_rounded,
+              onPressed: () {
+                Navigator.pop(ctx);
+                _confirmDelete(record);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detail(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: DS.text(size: 15, weight: FontWeight.w500, color: DS.muted),
+        ),
+        Text(value, style: DS.text(size: 15.5, weight: FontWeight.w700)),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -161,91 +191,64 @@ class _TrendsScreenState extends State<TrendsScreen> {
     final withHoma = all.where((r) => r.homaIr != null).toList();
     final series = all.where((r) => _metric.valueOf(r) != null).toList();
 
-    return Scaffold(
-      appBar: AppHeader(
-        title: 'Metabolic Trends',
-        onProfileTap: () => context.read<NavProvider>().setTab(2),
-      ),
-      body: provider.loading
-          ? const Center(child: CircularProgressIndicator())
-          : all.isEmpty
-          ? const _EmptyTrends()
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-              children: [
-                if (withHoma.isNotEmpty)
-                  _ScoreCard(first: withHoma.first, latest: withHoma.last)
-                else
-                  const _NoHomaCard(),
-                const SizedBox(height: 16),
-                _MetricTabs(
-                  selected: _metric,
-                  onChanged: (m) => setState(() => _metric = m),
-                ),
-                const SizedBox(height: 16),
-                _ChartCard(metric: _metric, series: series),
-                const SizedBox(height: 18),
-                FilledButton.icon(
-                  onPressed: () => openAddResult(context),
-                  icon: const Icon(Icons.document_scanner_outlined),
-                  label: const Text('Add Another Result'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.buttonBlue,
-                    minimumSize: const Size.fromHeight(54),
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
+    return DsBackground(
+      child: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+          children: [
+            const DsTitle('Your', 'trends', size: 38),
+            const SizedBox(height: 22),
+            if (all.isEmpty)
+              const _EmptyTrends()
+            else ...[
+              if (withHoma.isNotEmpty)
+                _ScoreCard(first: withHoma.first, latest: withHoma.last)
+              else
+                const _NoHomaCard(),
+              const SizedBox(height: 20),
+              _MetricTabs(
+                selected: _metric,
+                onChanged: (m) => setState(() => _metric = m),
+              ),
+              const SizedBox(height: 20),
+              _ChartCard(metric: _metric, series: series),
+              const SizedBox(height: 24),
+              Text(
+                'Results',
+                style: DS.text(size: 17, weight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              for (final r in all.reversed) ...[
+                _ResultRow(record: r, onTap: () => _openDetails(r)),
                 const SizedBox(height: 10),
-                FilledButton.icon(
-                  onPressed: () => _shareSummary(all.last),
-                  icon: const Icon(Icons.share_outlined),
-                  label: const Text('Share Summary on WhatsApp'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.safeBg,
-                    foregroundColor: AppColors.safeText,
-                    minimumSize: const Size.fromHeight(54),
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 26),
-                const Text(
-                  'All results',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.navy,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                for (final r in all.reversed) ...[
-                  _RecordTile(record: r, onDelete: () => _confirmDelete(r)),
-                  const SizedBox(height: 10),
-                ],
-                const SizedBox(height: 10),
-                const Text(
-                  'Screening tool only, not medical advice. Always review results '
-                  'and treatment with your doctor.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.gray,
-                    fontSize: 12.5,
-                    height: 1.4,
-                  ),
-                ),
               ],
-            ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: DsPrimaryButton(
+                      label: 'Add result',
+                      icon: Icons.add_rounded,
+                      height: 58,
+                      onPressed: () => openAddResult(context),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DsOutlineButton(
+                      label: 'Share',
+                      icon: Icons.share_outlined,
+                      onPressed: () =>
+                          shareSummaryOnWhatsApp(context, all.last),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -254,318 +257,303 @@ class _EmptyTrends extends StatelessWidget {
   const _EmptyTrends();
 
   @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.show_chart_rounded,
-              size: 52,
-              color: AppColors.accentBlue,
-            ),
-            SizedBox(height: 12),
-            Text(
-              'No results yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.navy,
-              ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              'Add a lab result and your HOMA-IR trend will appear here.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.gray),
-            ),
-          ],
+  Widget build(BuildContext context) => DsCard(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      children: [
+        const DsIconBadge(icon: Icons.show_chart_rounded, size: 56),
+        const SizedBox(height: 16),
+        Text(
+          'No results yet',
+          style: DS.text(size: 20, weight: FontWeight.w800),
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 6),
+        Text(
+          'Scan a lab report to see your score and your trend.',
+          textAlign: TextAlign.center,
+          style: DS.text(
+            size: 14.5,
+            weight: FontWeight.w500,
+            color: DS.muted,
+            height: 1.45,
+          ),
+        ),
+        const SizedBox(height: 20),
+        DsPrimaryButton(
+          label: 'Scan a report',
+          icon: Icons.document_scanner_outlined,
+          height: 56,
+          onPressed: () => openAddResult(context),
+        ),
+      ],
+    ),
+  );
 }
 
 class _NoHomaCard extends StatelessWidget {
   const _NoHomaCard();
 
   @override
-  Widget build(BuildContext context) {
-    return const Card(
-      child: Padding(
-        padding: EdgeInsets.all(18),
-        child: Text(
-          'Add fasting glucose and fasting insulin together to calculate your HOMA-IR score.',
-          style: TextStyle(color: AppColors.gray, height: 1.4),
-        ),
+  Widget build(BuildContext context) => DsCard(
+    padding: const EdgeInsets.all(22),
+    child: Text(
+      'Add both fasting glucose and insulin to see your HOMA-IR score.',
+      style: DS.text(
+        size: 15,
+        weight: FontWeight.w500,
+        color: DS.muted,
+        height: 1.5,
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _ScoreCard extends StatelessWidget {
+  const _ScoreCard({required this.first, required this.latest});
   final LabRecord first;
   final LabRecord latest;
-  const _ScoreCard({required this.first, required this.latest});
+
+  static const _max = 4.5;
 
   @override
   Widget build(BuildContext context) {
-    final band = latest.homaIrBand!;
     final value = latest.homaIr!;
-    final hasDelta = !identical(first, latest);
-    final delta = value - first.homaIr!;
+    final band = latest.homaIrBand!;
+    final change = identical(first, latest) ? null : value - first.homaIr!;
+    final lower = change != null && change < 0;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'HOMA-IR SCORE',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    letterSpacing: 1.1,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.gray,
-                  ),
+    return DsCard(
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'HOMA-IR',
+                style: DS.text(
+                  size: 15,
+                  weight: FontWeight.w600,
+                  color: DS.muted,
                 ),
-                BandChip(band: band),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  value.toStringAsFixed(2),
-                  style: TextStyle(
-                    fontSize: 44,
-                    fontWeight: FontWeight.bold,
-                    height: 1,
-                    color: bandTextColor(band),
-                  ),
+              ),
+              BandChip(band: band),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value.toStringAsFixed(2),
+                style: DS.text(
+                  size: 60,
+                  weight: FontWeight.w800,
+                  letterSpacing: -2.4,
+                  height: 1.05,
                 ),
-                const SizedBox(width: 8),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 6),
-                  child: Text('index', style: TextStyle(color: AppColors.gray)),
-                ),
-                const Spacer(),
-                if (hasDelta)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          delta <= 0
-                              ? Icons.south_east_rounded
-                              : Icons.north_east_rounded,
-                          size: 16,
-                          color: delta <= 0
-                              ? AppColors.safeText
-                              : AppColors.dangerText,
+              ),
+              const Spacer(),
+              if (change != null && change.abs() >= 0.005)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Icon(
+                        lower
+                            ? Icons.south_east_rounded
+                            : Icons.north_east_rounded,
+                        size: 17,
+                        color: lower ? DS.greenText : DS.amberText,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${change.abs().toStringAsFixed(2)} since '
+                        '${DateFormat.MMM().format(first.date)}',
+                        style: DS.text(
+                          size: 14.5,
+                          weight: FontWeight.w700,
+                          color: lower ? DS.greenText : DS.amberText,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${delta > 0 ? '+' : (delta < 0 ? '−' : '')}${delta.abs().toStringAsFixed(2)} since first',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: delta <= 0
-                                ? AppColors.safeText
-                                : AppColors.dangerText,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, c) {
+              final dotX = (value / _max).clamp(0.0, 1.0) * c.maxWidth;
+              return Column(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Row(
+                        children: [
+                          for (final seg in const [
+                            (100, Color(0xFFBFE6D3)),
+                            (90, Color(0xFFD4EEE0)),
+                            (100, Color(0xFFFFE2A6)),
+                            (160, Color(0xFFF7C3C9)),
+                          ]) ...[
+                            Expanded(
+                              flex: seg.$1,
+                              child: Container(
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: seg.$2,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                            ),
+                            if (seg.$1 != 160) const SizedBox(width: 3),
+                          ],
+                        ],
+                      ),
+                      Positioned(
+                        left: math.max(0, dotX - 10),
+                        top: -5,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: DS.navy,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: DS.navy.withValues(alpha: 0.35),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 18,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: 0,
+                          child: Text(
+                            '0',
+                            style: DS.text(
+                              size: 12.5,
+                              weight: FontWeight.w600,
+                              color: DS.iconMuted,
+                            ),
+                          ),
+                        ),
+                        for (final mark in const [
+                          ('1.0', 1.0),
+                          ('1.9', 1.9),
+                          ('2.9', 2.9),
+                        ])
+                          Positioned(
+                            left: (mark.$2 / _max) * c.maxWidth - 10,
+                            child: Text(
+                              mark.$1,
+                              style: DS.text(
+                                size: 12.5,
+                                weight: FontWeight.w600,
+                                color: DS.iconMuted,
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          right: 0,
+                          child: Text(
+                            '4.5+',
+                            style: DS.text(
+                              size: 12.5,
+                              weight: FontWeight.w600,
+                              color: DS.iconMuted,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _ScaleBar(value: value),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.pastel,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.spa_outlined,
-                    color: AppColors.buttonBlue,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      bandExplanation(band),
-                      style: const TextStyle(
-                        color: AppColors.text,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ScaleBar extends StatelessWidget {
-  final double value;
-  const _ScaleBar({required this.value});
-
-  static const double _max = 4.5;
-  static const _marks = <(double, String)>[
-    (0, '0'),
-    (1.0, '1.0'),
-    (1.9, '1.9'),
-    (2.9, '2.9'),
-    (4.5, '4.5+'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final w = c.maxWidth;
-        double x(double v) => (v / _max).clamp(0.0, 1.0) * w;
-
-        Widget seg(int flex, Color color) => Expanded(
-          flex: flex,
-          child: Container(height: 10, color: color),
-        );
-
-        return SizedBox(
-          height: 56,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                left: 0,
-                right: 0,
-                top: 12,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Row(
-                    children: [
-                      seg(100, const Color(0xFFBFEBD5)),
-                      seg(90, const Color(0xFFDDF3E5)),
-                      seg(100, const Color(0xFFFBE7A6)),
-                      seg(160, const Color(0xFFF8C9C9)),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                left: x(value) - 8,
-                top: 7,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: bandColor(
-                      value < 1.0
-                          ? HomaIrBand.optimal
-                          : value < 1.9
-                          ? HomaIrBand.normal
-                          : value < 2.9
-                          ? HomaIrBand.earlyResistance
-                          : HomaIrBand.significantResistance,
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x33000000), blurRadius: 4),
-                    ],
-                  ),
-                ),
-              ),
-              for (final m in _marks)
-                Positioned(
-                  left: (x(m.$1) - 20).clamp(0.0, math.max(0.0, w - 40)),
-                  top: 32,
-                  width: 40,
-                  child: Text(
-                    m.$2,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      color: AppColors.gray,
-                    ),
-                  ),
-                ),
-            ],
+              );
+            },
           ),
-        );
-      },
-    );
-  }
-}
-
-class _MetricTabs extends StatelessWidget {
-  final TrendMetric selected;
-  final ValueChanged<TrendMetric> onChanged;
-  const _MetricTabs({required this.selected, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.pastel,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          for (final m in TrendMetric.values)
-            Expanded(
-              child: GestureDetector(
-                onTap: () => onChanged(m),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 11),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: m == selected ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    m.tab,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: m == selected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: m == selected ? AppColors.navy : AppColors.gray,
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 }
 
+class _MetricTabs extends StatelessWidget {
+  const _MetricTabs({required this.selected, required this.onChanged});
+  final TrendMetric selected;
+  final ValueChanged<TrendMetric> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (final m in TrendMetric.values) ...[
+          Expanded(
+            child: Semantics(
+              button: true,
+              selected: m == selected,
+              label: m.tab,
+              child: GestureDetector(
+                onTap: () => onChanged(m),
+                child: Container(
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: m == selected
+                        ? Colors.white
+                        : DS.navy.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: m == selected
+                        ? [
+                            BoxShadow(
+                              color: DS.navy.withValues(alpha: 0.10),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      m.tab,
+                      style: DS.text(
+                        size: 14,
+                        weight: m == selected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        color: m == selected ? DS.navy : DS.iconMuted,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (m != TrendMetric.values.last) const SizedBox(width: 8),
+        ],
+      ],
+    );
+  }
+}
+
 class _ChartCard extends StatelessWidget {
+  const _ChartCard({required this.metric, required this.series});
   final TrendMetric metric;
   final List<LabRecord> series;
-  const _ChartCard({required this.metric, required this.series});
 
   @override
   Widget build(BuildContext context) {
@@ -577,186 +565,79 @@ class _ChartCard extends StatelessWidget {
       pct = (values.last - values.first) / values.first * 100;
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Your ${metric.title} over time',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.navy,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        n == 1
-                            ? '1 recorded lab checkup'
-                            : '$n recorded lab checkups',
-                        style: const TextStyle(
-                          color: AppColors.gray,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (pct != null && pct.abs() >= 0.5)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: pct < 0 ? AppColors.safeBg : AppColors.warningBg,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      '${pct < 0 ? 'Down' : 'Up'} ${pct.abs().toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12.5,
-                        color: pct < 0
-                            ? AppColors.safeText
-                            : AppColors.warningText,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            if (n == 0)
-              const Text(
-                'No results with this value yet.',
-                style: TextStyle(color: AppColors.gray),
-              )
-            else ...[
-              _LatestCallout(
-                metric: metric,
-                record: series.last,
-                value: values.last,
-              ),
-              const SizedBox(height: 16),
-              if (n < 2)
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.pastel,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Text(
-                    'Add one more result with this value to see your trend line.',
-                    style: TextStyle(color: AppColors.gray),
-                  ),
-                )
-              else ...[
-                SizedBox(
-                  height: 200,
-                  child: _TrendChart(metric: metric, series: series),
-                ),
-                if (metric == TrendMetric.homaIr) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Green band: target zone (below 1.9)',
-                    style: TextStyle(color: AppColors.gray, fontSize: 12),
-                  ),
-                ],
-                if (pct != null && pct.abs() >= 0.5) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.pastel,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          pct < 0 ? Icons.trending_down : Icons.trending_up,
-                          color: AppColors.buttonBlue,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            pct < 0
-                                ? 'Down ${pct.abs().toStringAsFixed(0)}% since your first result. '
-                                      'Keep going with what is working.'
-                                : 'Up ${pct.abs().toStringAsFixed(0)}% since your first result. '
-                                      'If it keeps rising, mention it to your doctor.',
-                            style: const TextStyle(
-                              color: AppColors.text,
-                              height: 1.35,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LatestCallout extends StatelessWidget {
-  final TrendMetric metric;
-  final LabRecord record;
-  final double value;
-  const _LatestCallout({
-    required this.metric,
-    required this.record,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = <String>[
-      if (record.fastingGlucoseMgdl != null)
-        'Glucose ${record.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
-      if (record.fastingInsulinUiuml != null)
-        'Insulin ${record.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL',
-      if (record.hba1cPercent != null)
-        'HbA1c ${record.hba1cPercent!.toStringAsFixed(1)}%',
-    ];
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.buttonBlue,
-        borderRadius: BorderRadius.circular(14),
-      ),
+    return DsCard(
+      padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${DateFormat.MMMd().format(record.date)}: '
-            '${value.toStringAsFixed(metric.decimals)} ${metric.unit}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Over time',
+                style: DS.text(size: 18, weight: FontWeight.w700),
+              ),
+              if (pct != null && pct.abs() >= 0.5)
+                DsPill(
+                  '${pct < 0 ? 'Down' : 'Up'} ${pct.abs().toStringAsFixed(0)}%',
+                  background: pct < 0 ? DS.greenTint : DS.amberTint,
+                  foreground: pct < 0 ? DS.greenText : DS.amberText,
+                  vertical: 6,
+                ),
+            ],
           ),
-          if (parts.isNotEmpty) ...[
-            const SizedBox(height: 2),
+          const SizedBox(height: 4),
+          Text(
+            n == 1 ? '1 lab checkup' : '$n lab checkups',
+            style: DS.text(size: 14, weight: FontWeight.w500, color: DS.muted),
+          ),
+          const SizedBox(height: 14),
+          if (n == 0)
             Text(
-              parts.join('  •  '),
-              style: const TextStyle(color: Color(0xFFBBD7F0), fontSize: 12.5),
+              'No results with this value yet.',
+              style: DS.text(color: DS.muted),
+            )
+          else if (n < 2)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: DS.field,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'Add one more result with this value to see your trend line.',
+                style: DS.text(size: 14.5, color: DS.muted, height: 1.4),
+              ),
+            )
+          else ...[
+            SizedBox(
+              height: 200,
+              child: _TrendChart(metric: metric, series: series),
             ),
+            if (metric == TrendMetric.homaIr) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFBFE6D3),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Healthy zone',
+                    style: DS.text(
+                      size: 13,
+                      weight: FontWeight.w600,
+                      color: DS.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ],
       ),
@@ -765,9 +646,9 @@ class _LatestCallout extends StatelessWidget {
 }
 
 class _TrendChart extends StatelessWidget {
+  const _TrendChart({required this.metric, required this.series});
   final TrendMetric metric;
   final List<LabRecord> series;
-  const _TrendChart({required this.metric, required this.series});
 
   @override
   Widget build(BuildContext context) {
@@ -781,6 +662,12 @@ class _TrendChart extends StatelessWidget {
     final maxY = isHoma ? math.max(hi + pad, 2.6) : hi + pad;
     final yInterval = math.max((maxY - minY) / 4, 0.1);
     final xInterval = math.max(1, (series.length / 5).ceil()).toDouble();
+    const gridColor = Color(0xFFE6EDF5);
+    final axis = DS.text(
+      size: 11.5,
+      weight: FontWeight.w600,
+      color: DS.iconMuted,
+    );
 
     return LineChart(
       LineChartData(
@@ -790,7 +677,7 @@ class _TrendChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: yInterval,
           getDrawingHorizontalLine: (_) =>
-              const FlLine(color: AppColors.pastelBorder, strokeWidth: 1),
+              const FlLine(color: gridColor, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         rangeAnnotations: RangeAnnotations(
@@ -799,7 +686,7 @@ class _TrendChart extends StatelessWidget {
               HorizontalRangeAnnotation(
                 y1: 0,
                 y2: 1.9,
-                color: AppColors.safe.withValues(alpha: 0.16),
+                color: const Color(0xFFBFE6D3).withValues(alpha: 0.6),
               ),
           ],
         ),
@@ -813,11 +700,11 @@ class _TrendChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 38,
+              reservedSize: 36,
               interval: yInterval,
               getTitlesWidget: (v, _) => Text(
                 v.toStringAsFixed(metric.decimals == 0 ? 0 : 1),
-                style: const TextStyle(color: AppColors.gray, fontSize: 11),
+                style: axis,
               ),
             ),
           ),
@@ -834,8 +721,8 @@ class _TrendChart extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    DateFormat.Md().format(series[i].date),
-                    style: const TextStyle(color: AppColors.gray, fontSize: 11),
+                    DateFormat.MMM().format(series[i].date),
+                    style: axis,
                   ),
                 );
               },
@@ -851,17 +738,22 @@ class _TrendChart extends StatelessWidget {
             isCurved: true,
             curveSmoothness: 0.2,
             preventCurveOverShooting: true,
-            color: AppColors.buttonBlue,
-            barWidth: 3,
+            color: DS.navy,
+            barWidth: 3.5,
+            belowBarData: BarAreaData(
+              show: true,
+              color: DS.navy.withValues(alpha: 0.07),
+            ),
             dotData: FlDotData(
-              getDotPainter: (spot, _, bar, index) => FlDotCirclePainter(
-                radius: index == values.length - 1 ? 6 : 4.5,
-                color: index == values.length - 1
-                    ? AppColors.warning
-                    : Colors.white,
-                strokeColor: AppColors.buttonBlue,
-                strokeWidth: 2.5,
-              ),
+              getDotPainter: (spot, _, bar, index) {
+                final last = index == values.length - 1;
+                return FlDotCirclePainter(
+                  radius: last ? 7 : 4.5,
+                  color: last ? DS.navy : Colors.white,
+                  strokeColor: last ? Colors.white : DS.navy,
+                  strokeWidth: 3,
+                );
+              },
             ),
           ),
         ],
@@ -888,104 +780,85 @@ class _TrendChart extends StatelessWidget {
   }
 }
 
-class _RecordTile extends StatelessWidget {
+class _ResultRow extends StatelessWidget {
+  const _ResultRow({required this.record, required this.onTap});
   final LabRecord record;
-  final VoidCallback onDelete;
-  const _RecordTile({required this.record, required this.onDelete});
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final band = record.homaIrBand;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: band == null ? AppColors.pastel : bandBackground(band),
-                border: Border.all(
-                  color: band == null
-                      ? AppColors.pastelBorder
-                      : bandColor(band),
-                  width: 2.5,
+    final parts = <String>[
+      if (record.fastingGlucoseMgdl != null)
+        '${record.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
+      if (record.fastingInsulinUiuml != null)
+        '${record.fastingInsulinUiuml!.toStringAsFixed(1)} uIU/mL',
+      if (record.hba1cPercent != null)
+        'HbA1c ${record.hba1cPercent!.toStringAsFixed(1)}%',
+    ];
+    return Semantics(
+      button: true,
+      label: 'Result of ${DateFormat.MMMd().format(record.date)}',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: DS.softShadow,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: band == null ? DS.field : bandBackground(band),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  record.homaIr == null
+                      ? '--'
+                      : record.homaIr!.toStringAsFixed(2),
+                  style: DS.text(
+                    size: 16,
+                    weight: FontWeight.w800,
+                    color: band == null ? DS.muted : bandTextColor(band),
+                  ),
                 ),
               ),
-              child: band == null
-                  ? const Icon(
-                      Icons.science_outlined,
-                      color: AppColors.buttonBlue,
-                    )
-                  : Text(
-                      record.homaIr!.toStringAsFixed(2),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13.5,
-                        color: bandTextColor(band),
-                      ),
-                    ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    DateFormat.yMMMd().format(record.date),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  if (record.fastingGlucoseMgdl != null)
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Glucose: ${record.fastingGlucoseMgdl!.toStringAsFixed(0)} mg/dL',
-                      style: const TextStyle(
-                        color: AppColors.gray,
-                        fontSize: 12.5,
-                      ),
+                      DateFormat.MMMd().format(record.date),
+                      style: DS.text(size: 15.5, weight: FontWeight.w700),
                     ),
-                  if (record.fastingInsulinUiuml != null)
+                    const SizedBox(height: 2),
                     Text(
-                      'Insulin: ${record.fastingInsulinUiuml!.toStringAsFixed(1)} µIU/mL',
-                      style: const TextStyle(
-                        color: AppColors.gray,
-                        fontSize: 12.5,
+                      parts.join(', '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: DS.text(
+                        size: 13.5,
+                        weight: FontWeight.w500,
+                        color: DS.muted,
                       ),
                     ),
-                  if (record.hba1cPercent != null)
-                    Text(
-                      'HbA1c: ${record.hba1cPercent!.toStringAsFixed(1)}%',
-                      style: const TextStyle(
-                        color: AppColors.gray,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  for (final marker in record.otherMarkers)
-                    Text(
-                      '${marker.name}: ${marker.value} ${marker.unit}',
-                      style: const TextStyle(
-                        color: AppColors.gray,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              tooltip: 'Delete result',
-              onPressed: onDelete,
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                color: AppColors.gray,
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: DS.iconMuted,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

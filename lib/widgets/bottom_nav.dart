@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/ds.dart';
 
+/// Bottom bar of the agreed design: Home, Trends, Scan, Profile.
+/// Scan opens the scan flow instead of switching tab.
 class BottomNav extends StatelessWidget {
   const BottomNav({
     super.key,
@@ -11,6 +12,7 @@ class BottomNav extends StatelessWidget {
     required this.onScan,
   });
 
+  /// 0 = Home, 1 = Trends, 2 = Profile.
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
   final VoidCallback onScan;
@@ -19,37 +21,48 @@ class BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        boxShadow: const [
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        boxShadow: [
           BoxShadow(
-            color: AppTheme.cardShadow,
-            blurRadius: 16,
-            offset: Offset(0, -3),
+            color: DS.navy.withValues(alpha: 0.08),
+            blurRadius: 30,
+            offset: const Offset(0, -10),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 74,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _NavItem(
-                icon: Icons.home_outlined,
+              _Item(
                 label: 'Home',
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home_rounded,
                 selected: currentIndex == 0,
                 onTap: () => onTabSelected(0),
               ),
-              Expanded(child: _ScanNavButton(onTap: onScan)),
-              _NavItem(
-                icon: Icons.show_chart_rounded,
+              _Item(
                 label: 'Trends',
+                icon: Icons.show_chart_rounded,
+                activeIcon: Icons.show_chart_rounded,
                 selected: currentIndex == 1,
                 onTap: () => onTabSelected(1),
               ),
-              _NavItem(
-                icon: Icons.person_outline_rounded,
+              _Item(
+                label: 'Scan',
+                icon: Icons.document_scanner_outlined,
+                activeIcon: Icons.document_scanner_outlined,
+                selected: false,
+                onTap: onScan,
+              ),
+              _Item(
                 label: 'Profile',
+                icon: Icons.person_outline_rounded,
+                activeIcon: Icons.person_rounded,
                 selected: currentIndex == 2,
                 onTap: () => onTabSelected(2),
               ),
@@ -61,97 +74,50 @@ class BottomNav extends StatelessWidget {
   }
 }
 
-class _ScanNavButton extends StatelessWidget {
-  const _ScanNavButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        height: 74,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            Positioned(
-              top: -15,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Material(
-                    color: AppColors.secondary,
-                    shape: const CircleBorder(),
-                    elevation: 8,
-                    shadowColor: AppColors.secondary.withValues(alpha: 0.3),
-                    child: const SizedBox(
-                      width: 56,
-                      height: 56,
-                      child: Icon(
-                        Icons.document_scanner_outlined,
-                        color: AppColors.onPrimary,
-                        size: 25,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Scan',
-                    style: Theme.of(context).textTheme.labelSmall
-                        ?.copyWith(color: AppColors.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
+class _Item extends StatelessWidget {
+  const _Item({
     required this.label,
+    required this.icon,
+    required this.activeIcon,
     required this.selected,
     required this.onTap,
   });
-
-  final IconData icon;
   final String label;
+  final IconData icon;
+  final IconData activeIcon;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primary : AppColors.onSurfaceVariant;
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: selected,
-        label: label,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            height: 74,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: color, size: 24),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
+    final color = selected ? DS.navy : DS.iconMuted;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 76, minHeight: 56),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(selected ? activeIcon : icon, size: 26, color: color),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
                   label,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  style: DS.text(
+                    size: 12.5,
+                    weight: selected ? FontWeight.w700 : FontWeight.w600,
                     color: color,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
