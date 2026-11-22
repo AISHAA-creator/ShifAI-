@@ -86,10 +86,11 @@ ShifAI requires your own Supabase project for real authentication and cloud sync
    - Open the project's **SQL Editor** and create a new query.
    - Open [`supabase/migrations/202606010001_initial_schema.sql`](supabase/migrations/202606010001_initial_schema.sql), copy its contents into the SQL Editor, and run it **once**.
    - This migration creates the profile, lab-report, user-preference, and coaching-completion tables. It enables RLS and adds policies that restrict user data to the authenticated user's `auth.uid()`.
+   - To add the optional triglyceride and HDL columns to an existing `lab_reports` table, create another SQL Editor query and run [`supabase/migrations/202611220001_add_triglycerides_hdl.sql`](supabase/migrations/202611220001_add_triglycerides_hdl.sql). It is safe to run repeatedly and does not change existing rows or RLS policies. Afterward, confirm `triglycerides_mg_dl` and `hdl_mg_dl` appear under **Table Editor → lab_reports**.
 3. Configure authentication:
    - In **Authentication → Providers**, enable email/password sign-up.
-   - Configure email verification to match your needs. When verification is required, use the verification link sent to the email address before signing in.
-   - In **Authentication → URL Configuration → Redirect URLs**, allow `http://localhost:5000` for the Chrome command in this guide. Also add your production HTTPS origin when deploying, and `com.shifai.shifai://login-callback/` for native Android/iOS authentication. If you run Chrome on another port, allow that exact origin instead.
+   - For local testing only, in **Authentication → Providers → Email**, turn **Confirm email** off so test accounts can sign in without email verification. Turn it back on before production. When confirmation is enabled, users must follow the verification link before signing in.
+   - In **Authentication → URL Configuration → Redirect URLs**, add `http://localhost:5000` as the local test URL for the Chrome command in this guide. Also add your production HTTPS origin when deploying, and `com.shifai.shifai://login-callback/` for native Android/iOS authentication. If you run Chrome on another port, allow that exact origin instead.
 4. Get the two client values:
    - In **Project Settings → API** (or **API Keys**), copy the **Project URL** and the **publishable key**. A legacy `anon` key can also be used.
    - Use the Project URL as `SUPABASE_URL` and the publishable/anon key as `SUPABASE_PUBLISHABLE_KEY` in the run command above.
