@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import 'lab_entry_form_screen.dart';
+import '../l10n/tx.dart';
 
 /// Camera-based OCR needs dart:io + Google ML Kit, neither available on web.
 /// This stub keeps the web build compiling and points straight to manual entry.
@@ -13,7 +14,7 @@ class LabScanScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add lab result')),
+      appBar: AppBar(title: const Tx('Add lab result')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -26,7 +27,7 @@ class LabScanScreen extends StatelessWidget {
                 color: AppColors.accentBlue,
               ),
               const SizedBox(height: 16),
-              const Text(
+              const Tx(
                 'Camera scanning is available on the Android/iOS app. '
                 'On the web, enter your values directly.',
                 textAlign: TextAlign.center,
@@ -37,7 +38,7 @@ class LabScanScreen extends StatelessWidget {
                 onPressed: () => Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const LabEntryFormScreen()),
                 ),
-                child: const Text('Enter values manually'),
+                child: const Tx('Enter values manually'),
               ),
             ],
           ),

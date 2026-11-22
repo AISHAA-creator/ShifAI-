@@ -7,6 +7,8 @@ import '../providers/auth_provider.dart';
 import '../providers/nav_provider.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
+import '../l10n/tx.dart';
+import '../l10n/translator.dart';
 
 /// Book Appointment: details, date and time, and whether to share results.
 /// The appointment is a request stored on this device (prototype); the
@@ -92,7 +94,7 @@ class _BookScreenState extends State<BookScreen> {
     final email = _email.text.trim();
     if (name.isEmpty || !email.contains('@') || !email.contains('.')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter your name and a valid email.')),
+        const SnackBar(content: Tx('Enter your name and a valid email.')),
       );
       return;
     }
@@ -133,21 +135,21 @@ class _BookScreenState extends State<BookScreen> {
         style: DS.text(weight: FontWeight.w600),
         onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
-          hintText: label,
+          hintText: L10n.tr(label),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           filled: false,
           contentPadding: const EdgeInsets.symmetric(vertical: 19),
           prefixIcon: Padding(
-            padding: const EdgeInsets.only(left: 20, right: 14),
+            padding: const EdgeInsetsDirectional.only(start: 20, end: 14),
             child: Icon(icon, size: 21, color: DS.navy),
           ),
           prefixIconConstraints: const BoxConstraints(),
           suffixIcon: controller.text.isEmpty
               ? null
               : IconButton(
-                  tooltip: 'Clear $label',
+                  tooltip: L10n.tr('Clear $label'),
                   onPressed: () => setState(controller.clear),
                   icon: const Icon(
                     Icons.close_rounded,
@@ -205,10 +207,10 @@ class _BookScreenState extends State<BookScreen> {
       body: DsBackground(
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 28),
             children: [
               const Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: DsBackButton(),
               ),
               const SizedBox(height: 26),
@@ -222,12 +224,12 @@ class _BookScreenState extends State<BookScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        Tx(
                           doctor.name,
                           style: DS.text(size: 16.5, weight: FontWeight.w800),
                         ),
                         const SizedBox(height: 2),
-                        Text(
+                        Tx(
                           '${doctor.specialty}, ${doctor.city}',
                           style: DS.text(
                             size: 14,
@@ -241,7 +243,7 @@ class _BookScreenState extends State<BookScreen> {
                 ],
               ),
               const SizedBox(height: 26),
-              Text(
+              Tx(
                 'Enter your details',
                 style: DS.text(
                   size: 15,
@@ -254,7 +256,7 @@ class _BookScreenState extends State<BookScreen> {
               const SizedBox(height: 12),
               _clearable(_email, Icons.mail_outline_rounded, 'Email'),
               const SizedBox(height: 26),
-              Text(
+              Tx(
                 'Pick date and time',
                 style: DS.text(
                   size: 15,
@@ -289,7 +291,7 @@ class _BookScreenState extends State<BookScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
+                          Tx(
                             '${d.day}',
                             style: DS.text(
                               size: 20,
@@ -298,7 +300,7 @@ class _BookScreenState extends State<BookScreen> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
+                          Tx(
                             _weekdays[d.weekday - 1],
                             style: DS.text(
                               size: 12,
@@ -338,7 +340,7 @@ class _BookScreenState extends State<BookScreen> {
                               ]
                             : null,
                       ),
-                      child: Text(
+                      child: Tx(
                         t.startsWith('0') ? t.substring(1) : t,
                         style: DS.text(
                           size: 15,
@@ -364,12 +366,12 @@ class _BookScreenState extends State<BookScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          Tx(
                             'Share my results',
                             style: DS.text(size: 16, weight: FontWeight.w700),
                           ),
                           const SizedBox(height: 2),
-                          Text(
+                          Tx(
                             'Stops if you cancel',
                             style: DS.text(
                               size: 13.5,
@@ -395,7 +397,7 @@ class _BookScreenState extends State<BookScreen> {
               ),
               const SizedBox(height: 12),
               Center(
-                child: Text(
+                child: Tx(
                   'The doctor confirms your request.',
                   style: DS.text(
                     size: 13.5,

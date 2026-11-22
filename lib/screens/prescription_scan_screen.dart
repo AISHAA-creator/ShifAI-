@@ -8,6 +8,7 @@ import '../services/prescription_parser.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
 import 'prescription_confirm_screen.dart';
+import '../l10n/tx.dart';
 
 /// Photo of a printed prescription, read on the phone (Google ML Kit), then
 /// checked by the person before anything is added. Android and iOS only.
@@ -65,7 +66,7 @@ class _PrescriptionScanScreenState extends State<PrescriptionScanScreen> {
       body: DsBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -73,7 +74,7 @@ class _PrescriptionScanScreenState extends State<PrescriptionScanScreen> {
                 const SizedBox(height: 26),
                 const DsTitle('Scan your', 'prescription', size: 36),
                 const SizedBox(height: 14),
-                Text(
+                Tx(
                   'Printed prescriptions work best. Handwriting is hard to '
                   'read, so you always check the result before it is added.',
                   style: DS.text(
@@ -85,7 +86,7 @@ class _PrescriptionScanScreenState extends State<PrescriptionScanScreen> {
                 ),
                 const Spacer(),
                 if (_error != null) ...[
-                  Text(_error!, style: DS.text(size: 14, color: DS.redText)),
+                  Tx(_error!, style: DS.text(size: 14, color: DS.redText)),
                   const SizedBox(height: 12),
                 ],
                 DsPrimaryButton(

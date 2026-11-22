@@ -11,12 +11,15 @@ import '../providers/nav_provider.dart';
 import '../theme/ds.dart';
 import '../utils/open_add_result.dart';
 import '../widgets/ds_widgets.dart';
+import 'checkin_screen.dart';
 import 'emergency_screen.dart';
 import 'find_doctor_screen.dart';
 import 'medicine_screen.dart';
 import 'profile_form_screen.dart';
 import 'skin_check_screen.dart';
 import 'wellness_screen.dart';
+import '../l10n/tx.dart';
+import '../l10n/translator.dart';
 
 class _Hit {
   final IconData icon;
@@ -85,6 +88,13 @@ class _SearchScreenState extends State<SearchScreen> {
         'Feature',
         ['eat', 'food', 'diet', 'sport', 'walk', 'exercise', 'move', 'sugar'],
         () => _go(const WellnessScreen()),
+      ),
+      (
+        Icons.bolt_rounded,
+        'Meals and energy',
+        'Feature',
+        ['meal', 'energy', 'tired', 'crash', 'craving', 'pattern', 'checkin'],
+        () => _go(const CheckInScreen()),
       ),
       (
         Icons.accessibility_new_rounded,
@@ -201,7 +211,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 12),
                 child: Row(
                   children: [
                     const DsBackButton(),
@@ -230,7 +240,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 style: DS.text(weight: FontWeight.w600),
                                 onChanged: (v) => setState(() => _query = v),
                                 decoration: InputDecoration(
-                                  hintText: 'Search',
+                                  hintText: L10n.tr('Search'),
                                   hintStyle: DS.text(color: DS.iconMuted),
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
@@ -263,7 +273,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: _query.trim().isEmpty
                     ? Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text(
+                        child: Tx(
                           'Try: scan, food, walk, doctor, medicine, or a date.',
                           style: DS.text(
                             size: 15,
@@ -276,13 +286,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     : hits.isEmpty
                     ? Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text(
+                        child: Tx(
                           'No match for "${_query.trim()}".',
                           style: DS.text(color: DS.muted),
                         ),
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          24,
+                          8,
+                          24,
+                          28,
+                        ),
                         itemCount: hits.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 10),
                         itemBuilder: (context, i) {
@@ -303,14 +318,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      Tx(
                                         h.title,
                                         style: DS.text(
                                           size: 15.5,
                                           weight: FontWeight.w800,
                                         ),
                                       ),
-                                      Text(
+                                      Tx(
                                         h.subtitle,
                                         style: DS.text(
                                           size: 13.5,

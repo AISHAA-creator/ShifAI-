@@ -6,6 +6,7 @@ import '../providers/medicine_provider.dart';
 import '../services/prescription_parser.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
+import '../l10n/tx.dart';
 
 class _Row {
   _Row(MedicineCandidate c)
@@ -83,7 +84,7 @@ class _PrescriptionConfirmScreenState extends State<PrescriptionConfirmScreen> {
       }
     }
     messenger.showSnackBar(
-      SnackBar(content: Text('$count reminder${count == 1 ? '' : 's'} added.')),
+      SnackBar(content: Tx('$count reminder${count == 1 ? '' : 's'} added.')),
     );
     navigator.pop(true);
   }
@@ -99,16 +100,16 @@ class _PrescriptionConfirmScreenState extends State<PrescriptionConfirmScreen> {
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                  padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 12),
                   children: [
                     const Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: DsBackButton(),
                     ),
                     const SizedBox(height: 24),
                     const DsTitle('Check your', 'prescription', size: 36),
                     const SizedBox(height: 12),
-                    Text(
+                    Tx(
                       _rows.isEmpty
                           ? 'We could not find a medicine and a dose in this '
                                 'photo. Try a clearer, straight photo, or add '
@@ -163,7 +164,7 @@ class _PrescriptionConfirmScreenState extends State<PrescriptionConfirmScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            Text(
+                            Tx(
                               r.guessed
                                   ? 'No schedule found: choose the times'
                                   : 'Times, read from the paper',
@@ -200,7 +201,7 @@ class _PrescriptionConfirmScreenState extends State<PrescriptionConfirmScreen> {
                                           999,
                                         ),
                                       ),
-                                      child: Text(
+                                      child: Tx(
                                         slot,
                                         style: DS.text(
                                           size: 14.5,
@@ -224,7 +225,7 @@ class _PrescriptionConfirmScreenState extends State<PrescriptionConfirmScreen> {
                           .copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         tilePadding: EdgeInsets.zero,
-                        title: Text(
+                        title: Tx(
                           'Show the text we read',
                           style: DS.text(
                             size: 14.5,
@@ -259,7 +260,7 @@ class _PrescriptionConfirmScreenState extends State<PrescriptionConfirmScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 20),
                 child: _rows.isEmpty
                     ? DsPrimaryButton(
                         label: 'Back',

@@ -5,6 +5,8 @@ import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
+import '../l10n/translator.dart';
+import '../l10n/tx.dart';
 
 /// My measurements: age, sex, height, weight and waist. Everything the risk
 /// estimate needs, none of it requiring a blood test. Kept on this device.
@@ -77,7 +79,7 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
     bool digitsOnly = false,
   }) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 14, 14, 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(18, 14, 14, 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -86,13 +88,13 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          Tx(
             label,
             style: DS.text(size: 14, weight: FontWeight.w600, color: DS.muted),
           ),
           TextFormField(
             controller: controller,
-            validator: validator,
+            validator: trValidator(validator),
             keyboardType: TextInputType.numberWithOptions(decimal: !digitsOnly),
             style: DS.text(
               size: 30,
@@ -134,16 +136,21 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
               children: [
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      24,
+                      20,
+                      24,
+                      12,
+                    ),
                     children: [
                       const Align(
-                        alignment: Alignment.centerLeft,
+                        alignment: AlignmentDirectional.centerStart,
                         child: DsBackButton(),
                       ),
                       const SizedBox(height: 24),
                       const DsTitle('My', 'measurements', size: 36),
                       const SizedBox(height: 12),
-                      Text(
+                      Tx(
                         'Private. Used for your risk estimate.',
                         style: DS.text(
                           size: 15.5,
@@ -183,7 +190,7 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(18),
                                       ),
-                                      child: Text(
+                                      child: Tx(
                                         entry.value,
                                         style: DS.text(
                                           size: 16.5,
@@ -251,7 +258,7 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
+                              child: Tx(
                                 'Measure your waist at belly button level.',
                                 style: DS.text(
                                   size: 14,
@@ -268,7 +275,7 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                  padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 20),
                   child: DsPrimaryButton(label: 'Save', onPressed: _save),
                 ),
               ],

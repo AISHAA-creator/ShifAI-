@@ -5,6 +5,7 @@ import '../models/morocco_cities.dart';
 import '../providers/settings_provider.dart';
 import '../theme/ds.dart';
 import 'ds_widgets.dart';
+import '../l10n/tx.dart';
 
 /// Bottom sheet to choose the city used to look for doctors.
 Future<void> pickCity(BuildContext context) async {
@@ -39,7 +40,7 @@ class _CitySheetState extends State<_CitySheet> {
         .toList();
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
+        padding: EdgeInsetsDirectional.fromSTEB(
           24,
           22,
           24,
@@ -50,7 +51,7 @@ class _CitySheetState extends State<_CitySheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              Tx(
                 'Choose your city',
                 style: DS.text(size: 24, weight: FontWeight.w800),
               ),
@@ -70,7 +71,7 @@ class _CitySheetState extends State<_CitySheet> {
                 child: cities.isEmpty
                     ? Padding(
                         padding: const EdgeInsets.only(top: 16),
-                        child: Text(
+                        child: Tx(
                           'No city found.',
                           style: DS.text(color: DS.muted),
                         ),
@@ -91,11 +92,11 @@ class _CitySheetState extends State<_CitySheet> {
                                 constraints: const BoxConstraints(
                                   minHeight: 52,
                                 ),
-                                alignment: Alignment.centerLeft,
+                                alignment: AlignmentDirectional.centerStart,
                                 child: Row(
                                   children: [
                                     Expanded(
-                                      child: Text(
+                                      child: Tx(
                                         c,
                                         style: DS.text(
                                           size: 16.5,

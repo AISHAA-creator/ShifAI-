@@ -11,6 +11,8 @@ import '../services/risk_model.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
 import 'profile_form_screen.dart';
+import '../l10n/tx.dart';
+import '../l10n/translator.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -18,15 +20,15 @@ class ProfileScreen extends StatelessWidget {
   void _soon(BuildContext context, String what) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(what)));
+      ..showSnackBar(SnackBar(content: Tx(what)));
   }
 
   void _privacy(BuildContext context, AuthProvider auth) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Your privacy', style: DS.text(weight: FontWeight.w800)),
-        content: Text(
+        title: Tx('Your privacy', style: DS.text(weight: FontWeight.w800)),
+        content: Tx(
           auth.isSignedIn
               ? 'Your confirmed lab values sync to your Supabase account and '
                     'stay cached on this device for offline use. Photos are '
@@ -40,29 +42,68 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: const Tx('Close'),
           ),
         ],
       ),
     );
   }
 
-  void _language(BuildContext context) {
-    showDialog<void>(
+  Future<void> _language(BuildContext context) async {
+    final settings = context.read<SettingsProvider>();
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Language', style: DS.text(weight: FontWeight.w800)),
-        content: Text(
-          'ShifAI is in English for now. French and Arabic are the next '
-          'languages to be added.',
-          style: DS.text(size: 15, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+      backgroundColor: DS.bgTop,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 22, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Tx('Language', style: DS.text(size: 24, weight: FontWeight.w800)),
+              const SizedBox(height: 14),
+              for (final code in L10n.supported)
+                Semantics(
+                  button: true,
+                  selected: code == settings.language,
+                  label: L10n.names[code],
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      settings.setLanguage(code);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 56),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            // Language names are always written in their own
+                            // language so anyone can find theirs.
+                            child: Text(
+                              L10n.names[code]!,
+                              style: DS.text(
+                                size: 17,
+                                weight: code == settings.language
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (code == settings.language)
+                            const Icon(Icons.check_rounded, color: DS.navy),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -77,12 +118,12 @@ class ProfileScreen extends StatelessWidget {
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 22, 24, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              Tx(
                 'Text size',
                 style: DS.text(size: 24, weight: FontWeight.w800),
               ),
@@ -103,7 +144,7 @@ class ProfileScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Expanded(
-                            child: Text(
+                            child: Tx(
                               entry.value,
                               style: DS.text(
                                 size: 16.5 * entry.key,
@@ -163,7 +204,7 @@ class ProfileScreen extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 28),
           children: [
             const DsTitle('Your', 'profile', size: 38),
             const SizedBox(height: 22),
@@ -179,7 +220,7 @@ class ProfileScreen extends StatelessWidget {
                       color: DS.navy,
                       shape: BoxShape.circle,
                     ),
-                    child: Text(
+                    child: Tx(
                       initial,
                       style: DS.text(
                         size: 26,
@@ -193,7 +234,7 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        Tx(
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -204,7 +245,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
+                        Tx(
                           auth.email ?? 'Not signed in',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -252,7 +293,7 @@ class ProfileScreen extends StatelessWidget {
               DsCard(
                 radius: 24,
                 padding: const EdgeInsets.all(20),
-                child: Text(
+                child: Tx(
                   'Add your age, height, weight and waist to get a risk '
                   'estimate. No blood test needed.',
                   style: DS.text(
@@ -290,7 +331,8 @@ class ProfileScreen extends StatelessWidget {
                   _SettingRow(
                     icon: Icons.language_rounded,
                     label: 'Language',
-                    value: 'English',
+                    value:
+                        L10n.names[context.watch<SettingsProvider>().language]!,
                     onTap: () => _language(context),
                   ),
                   const Divider(height: 1, color: DS.divider),
@@ -329,7 +371,7 @@ class ProfileScreen extends StatelessWidget {
             ],
             const SizedBox(height: 18),
             Center(
-              child: Text(
+              child: Tx(
                 'ShifAI is a screening tool, not a diagnosis.\n'
                 'Please review your results with your doctor.',
                 textAlign: TextAlign.center,
@@ -359,11 +401,11 @@ class ProfileScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
+        title: Tx(
           'Import local results?',
           style: DS.text(weight: FontWeight.w800),
         ),
-        content: Text(
+        content: Tx(
           '$count local result${count == 1 ? '' : 's'} will be copied to this '
           'signed-in account. Existing account records will not be replaced.',
           style: DS.text(size: 15, height: 1.45),
@@ -371,11 +413,11 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Import'),
+            child: const Tx('Import'),
           ),
         ],
       ),
@@ -414,7 +456,7 @@ class _Tile extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        Tx(
           label,
           style: DS.text(size: 13, weight: FontWeight.w600, color: DS.muted),
         ),
@@ -423,7 +465,7 @@ class _Tile extends StatelessWidget {
           TextSpan(
             children: [
               TextSpan(
-                text: value,
+                text: L10n.tr(value),
                 style: DS.text(
                   size: 21,
                   weight: FontWeight.w800,
@@ -469,7 +511,7 @@ class _RiskRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                Tx(
                   'Estimated risk',
                   style: DS.text(
                     size: 13.5,
@@ -478,7 +520,7 @@ class _RiskRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                Tx(
                   band.label.replaceAll(' risk', ''),
                   style: DS.text(size: 19, weight: FontWeight.w800),
                 ),
@@ -496,7 +538,7 @@ class _RiskRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 18),
-          Text(
+          Tx(
             '${assessment.percent}%',
             style: DS.text(
               size: 30,
@@ -547,7 +589,7 @@ class _SettingRow extends StatelessWidget {
                   color: DS.skyTint,
                   shape: BoxShape.circle,
                 ),
-                child: Text(
+                child: Tx(
                   glyph!,
                   style: DS.text(
                     size: 15,
@@ -558,15 +600,15 @@ class _SettingRow extends StatelessWidget {
               ),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
+              child: Tx(
                 label,
                 style: DS.text(size: 16, weight: FontWeight.w600),
               ),
             ),
             if (value != null)
               Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Text(
+                padding: const EdgeInsetsDirectional.only(end: 6),
+                child: Tx(
                   value!,
                   style: DS.text(
                     size: 14.5,

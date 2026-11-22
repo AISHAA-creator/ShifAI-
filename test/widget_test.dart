@@ -11,6 +11,7 @@ import 'package:shifai/models/user_profile.dart';
 import 'package:shifai/providers/activity_provider.dart';
 import 'package:shifai/providers/appointment_provider.dart';
 import 'package:shifai/providers/auth_provider.dart';
+import 'package:shifai/providers/checkin_provider.dart';
 import 'package:shifai/providers/coaching_provider.dart';
 import 'package:shifai/providers/lab_records_provider.dart';
 import 'package:shifai/providers/medicine_provider.dart';
@@ -19,6 +20,7 @@ import 'package:shifai/providers/profile_provider.dart';
 import 'package:shifai/providers/settings_provider.dart';
 import 'package:shifai/providers/skin_check_provider.dart';
 import 'package:shifai/screens/app_shell.dart';
+import 'package:shifai/screens/checkin_screen.dart';
 import 'package:shifai/screens/find_doctor_screen.dart';
 import 'package:shifai/screens/lab_entry_form_screen.dart';
 import 'package:shifai/screens/lab_scan_screen.dart';
@@ -48,6 +50,7 @@ Widget _app(Widget home, {AuthProvider? auth}) => MultiProvider(
     ChangeNotifierProvider(create: (_) => SettingsProvider()),
     ChangeNotifierProvider(create: (_) => ActivityProvider()),
     ChangeNotifierProvider(create: (_) => SkinCheckProvider()),
+    ChangeNotifierProvider(create: (_) => CheckInProvider()),
   ],
   child: MaterialApp(theme: AppTheme.light(), home: home),
 );
@@ -417,6 +420,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Add my measurements'), findsOneWidget);
     expect(find.text('High risk'), findsNothing);
+  });
+
+  testWidgets('a meal and an energy check can be logged', (tester) async {
+    phone(tester, h: 3200);
+    await tester.pumpWidget(_app(const CheckInScreen()));
+    await tester.pumpAndSettle();
+
+    // nothing to compare yet
+    expect(find.text('Nothing to compare yet'), findsOneWidget);
+
+    await tester.tap(find.text('Sweet or fried'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save meal'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('sweet or fried'), findsWidgets);
+
+    await tester.tap(find.text('Low'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save energy'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Energy: low'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('only a high band suggests a doctor on the result screen', (

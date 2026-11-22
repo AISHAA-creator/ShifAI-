@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
 import 'auth_screen.dart';
+import '../l10n/tx.dart';
+import '../l10n/translator.dart';
 
 /// First screen for a signed-out user.
 class WelcomeScreen extends StatelessWidget {
@@ -21,7 +23,7 @@ class WelcomeScreen extends StatelessWidget {
       body: DsBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(28, 20, 28, 28),
+            padding: const EdgeInsetsDirectional.fromSTEB(28, 20, 28, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -29,7 +31,7 @@ class WelcomeScreen extends StatelessWidget {
                   'assets/images/shifai_logo.png',
                   width: 168,
                   fit: BoxFit.contain,
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   semanticLabel: 'ShifAI',
                 ),
                 const SizedBox(height: 30),
@@ -37,11 +39,15 @@ class WelcomeScreen extends StatelessWidget {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: 'Know your\n',
+                        text:
+                            '${L10n.tr('Know your\ninsulin health.').split('\n').first}\n',
                         style: DS.text(size: 38, weight: FontWeight.w500),
                       ),
                       TextSpan(
-                        text: 'insulin health.',
+                        text: L10n.tr('Know your\ninsulin health.')
+                            .split('\n')
+                            .skip(1)
+                            .join(' '),
                         style: DS.text(size: 38, weight: FontWeight.w800),
                       ),
                     ],
@@ -49,7 +55,7 @@ class WelcomeScreen extends StatelessWidget {
                   style: const TextStyle(height: 1.12, letterSpacing: -0.76),
                 ),
                 const SizedBox(height: 14),
-                Text(
+                Tx(
                   'Scan a lab report. Watch your trend.',
                   style: DS.text(
                     size: 17,
@@ -103,14 +109,14 @@ class _Illustration extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
-              left: 4,
+            PositionedDirectional(
+              start: 4,
               top: math.min(34, h * 0.1),
               child: Transform.rotate(
                 angle: -3 * math.pi / 180,
                 child: Container(
                   width: 250,
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 20, 20, 18),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(28),
@@ -129,7 +135,7 @@ class _Illustration extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Flexible(
-                            child: Text(
+                            child: Tx(
                               'HOMA-IR',
                               style: DS.text(
                                 size: 14,
@@ -149,7 +155,7 @@ class _Illustration extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Text(
+                      Tx(
                         '2.1',
                         style: DS.text(
                           size: 52,
@@ -168,14 +174,14 @@ class _Illustration extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
-              right: 0,
+            PositionedDirectional(
+              end: 0,
               top: math.min(170, h * 0.45),
               child: Transform.rotate(
                 angle: 3 * math.pi / 180,
                 child: Container(
                   width: 150,
-                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+                  padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 16),
                   decoration: BoxDecoration(
                     color: DS.navy,
                     borderRadius: BorderRadius.circular(24),
@@ -196,7 +202,7 @@ class _Illustration extends StatelessWidget {
                         color: DS.sky,
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      Tx(
                         'Scan report',
                         style: DS.text(
                           size: 16,
@@ -205,7 +211,7 @@ class _Illustration extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      Tx(
                         'Read in seconds',
                         style: DS.text(
                           size: 13,

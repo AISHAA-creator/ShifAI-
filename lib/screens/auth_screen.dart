@@ -9,6 +9,8 @@ import '../config/supabase_config.dart';
 import '../providers/auth_provider.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
+import '../l10n/tx.dart';
+import '../l10n/translator.dart';
 
 enum AuthStart { signIn, createAccount }
 
@@ -213,7 +215,12 @@ class _AuthScreenState extends State<AuthScreen> {
                   Expanded(
                     child: ListView(
                       controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(28, 20, 28, 12),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        28,
+                        20,
+                        28,
+                        12,
+                      ),
                       children: [
                         Row(
                           children: [
@@ -241,10 +248,13 @@ class _AuthScreenState extends State<AuthScreen> {
                           ],
                         ),
                         const SizedBox(height: 30),
-                        Align(alignment: Alignment.centerLeft, child: title),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: title,
+                        ),
                         if (isVerify) ...[
                           const SizedBox(height: 12),
-                          Text(
+                          Tx(
                             'Follow the link sent to ${_emailController.text}.',
                             style: DS.text(color: DS.muted, height: 1.5),
                           ),
@@ -294,9 +304,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                         ? _validatePassword
                                         : null,
                                     trailing: IconButton(
-                                      tooltip: _passwordVisible
-                                          ? 'Hide password'
-                                          : 'Show password',
+                                      tooltip: L10n.tr(
+                                        _passwordVisible
+                                            ? 'Hide password'
+                                            : 'Show password',
+                                      ),
                                       onPressed: () => setState(
                                         () => _passwordVisible =
                                             !_passwordVisible,
@@ -313,10 +325,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                 if (isCreate) ...[
                                   const SizedBox(height: 12),
                                   Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: Padding(
-                                      padding: const EdgeInsets.only(left: 4),
-                                      child: Text(
+                                      padding: const EdgeInsetsDirectional.only(
+                                        start: 4,
+                                      ),
+                                      child: Tx(
                                         'Use at least 8 characters.',
                                         style: DS.text(
                                           size: 14,
@@ -334,10 +348,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                 ],
                                 if (_mode == _AuthMode.signIn)
                                   Align(
-                                    alignment: Alignment.centerRight,
+                                    alignment: AlignmentDirectional.centerEnd,
                                     child: DsTextAction(
                                       'Forgot password?',
-                                      alignment: Alignment.centerRight,
+                                      alignment: AlignmentDirectional.centerEnd,
                                       onPressed: () =>
                                           _changeMode(_AuthMode.forgotPassword),
                                     ),
@@ -353,7 +367,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               color: DS.skyTint,
                               borderRadius: BorderRadius.circular(18),
                             ),
-                            child: Text(
+                            child: Tx(
                               _message!,
                               style: DS.text(
                                 size: 14,
@@ -367,7 +381,12 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(28, 8, 28, 20),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      28,
+                      8,
+                      28,
+                      20,
+                    ),
                     child: Column(
                       children: [
                         DsPrimaryButton(
@@ -396,9 +415,11 @@ class _AuthScreenState extends State<AuthScreen> {
                               TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: isCreate
-                                        ? 'Already a member? '
-                                        : 'New here? ',
+                                    text: L10n.tr(
+                                      isCreate
+                                          ? 'Already a member? '
+                                          : 'New here? ',
+                                    ),
                                     style: DS.text(
                                       size: 15.5,
                                       weight: FontWeight.w600,
@@ -406,9 +427,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                     ),
                                   ),
                                   TextSpan(
-                                    text: isCreate
-                                        ? 'Sign in'
-                                        : 'Create account',
+                                    text: L10n.tr(
+                                      isCreate ? 'Sign in' : 'Create account',
+                                    ),
                                     style: DS.text(
                                       size: 15.5,
                                       weight: FontWeight.w800,
@@ -442,12 +463,12 @@ class _TermsRow extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title, style: DS.text(weight: FontWeight.w800)),
-        content: Text(body, style: DS.text(size: 15, height: 1.45)),
+        title: Tx(title, style: DS.text(weight: FontWeight.w800)),
+        content: Tx(body, style: DS.text(size: 15, height: 1.45)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Tx('Close'),
           ),
         ],
       ),
@@ -472,7 +493,7 @@ class _TermsRow extends StatelessWidget {
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text('I accept the ', style: plain),
+              Tx('I accept the ', style: plain),
               GestureDetector(
                 onTap: () => _notice(
                   context,
@@ -483,9 +504,9 @@ class _TermsRow extends StatelessWidget {
                       'report images are not uploaded. Do not enter data until '
                       'your project and policies have been reviewed.',
                 ),
-                child: Text('privacy notice', style: link),
+                child: Tx('privacy notice', style: link),
               ),
-              Text(' and ', style: plain),
+              Tx(' and ', style: plain),
               GestureDetector(
                 onTap: () => _notice(
                   context,
@@ -495,9 +516,9 @@ class _TermsRow extends StatelessWidget {
                       'Confirm results and treatment decisions with a licensed '
                       'clinician.',
                 ),
-                child: Text('terms of use', style: link),
+                child: Tx('terms of use', style: link),
               ),
-              Text('.', style: plain),
+              Tx('.', style: plain),
             ],
           ),
         ),
@@ -562,7 +583,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       body: DsBackground(
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(28, 20, 28, 28),
+            padding: const EdgeInsetsDirectional.fromSTEB(28, 20, 28, 28),
             children: [
               const DsTitle('Choose a', 'new password'),
               const SizedBox(height: 32),
@@ -581,7 +602,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
               ),
               if (_message != null) ...[
                 const SizedBox(height: 12),
-                Text(_message!, style: DS.text(size: 14, color: DS.redText)),
+                Tx(_message!, style: DS.text(size: 14, color: DS.redText)),
               ],
               const SizedBox(height: 24),
               DsPrimaryButton(

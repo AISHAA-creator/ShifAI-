@@ -7,6 +7,7 @@ import '../theme/ds.dart';
 import '../utils/open_add_result.dart';
 import '../utils/share_summary.dart';
 import '../widgets/ds_widgets.dart';
+import 'checkin_screen.dart';
 import 'emergency_screen.dart';
 import 'find_doctor_screen.dart';
 import 'lab_entry_form_screen.dart';
@@ -16,6 +17,7 @@ import 'profile_form_screen.dart';
 import 'search_screen.dart';
 import 'skin_check_screen.dart';
 import 'wellness_screen.dart';
+import '../l10n/tx.dart';
 
 /// "Show all" of the quick actions: every feature in one place.
 class ShortcutsScreen extends StatelessWidget {
@@ -63,7 +65,7 @@ class ShortcutsScreen extends StatelessWidget {
           if (labs.records.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Add a result first, then you can share it.'),
+                content: Tx('Add a result first, then you can share it.'),
               ),
             );
           } else {
@@ -77,6 +79,13 @@ class ShortcutsScreen extends StatelessWidget {
         'Eat and move',
         'Food and activity guidance',
         () => _go(context, const WellnessScreen()),
+        DS.navy,
+      ),
+      (
+        Icons.bolt_rounded,
+        'Meals and energy',
+        'Your own food and energy pattern',
+        () => _go(context, const CheckInScreen()),
         DS.navy,
       ),
       (
@@ -134,10 +143,10 @@ class ShortcutsScreen extends StatelessWidget {
       body: DsBackground(
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 28),
             children: [
               const Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: DsBackButton(),
               ),
               const SizedBox(height: 26),
@@ -166,12 +175,12 @@ class ShortcutsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            Tx(
                               item.$2,
                               style: DS.text(size: 16, weight: FontWeight.w800),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            Tx(
                               item.$3,
                               style: DS.text(
                                 size: 13.5,

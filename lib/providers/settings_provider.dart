@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../l10n/translator.dart';
+
 /// Text size, chosen city, medicine reminders and which notifications have
 /// been seen. Stored on this device only.
 class SettingsProvider extends ChangeNotifier {
@@ -8,6 +10,7 @@ class SettingsProvider extends ChangeNotifier {
   static const _kCity = 'shifai_city';
   static const _kSeen = 'shifai_seen_notices';
   static const _kReminders = 'shifai_med_reminders';
+  static const _kLanguage = 'shifai_language';
 
   static final textSizes = <double, String>{
     0.9: 'Small',
@@ -20,6 +23,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _city;
   Set<String> _seen = {};
   bool _medicineReminders = false;
+  String _language = 'en';
 
   SettingsProvider() {
     _load();
@@ -28,6 +32,7 @@ class SettingsProvider extends ChangeNotifier {
   double get textScale => _textScale;
   String get textSizeLabel => textSizes[_textScale] ?? 'Standard';
   String? get city => _city;
+  String get language => _language;
   bool get medicineReminders => _medicineReminders;
 
   bool hasSeen(String id) => _seen.contains(id);
@@ -39,6 +44,9 @@ class SettingsProvider extends ChangeNotifier {
     _city = prefs.getString(_kCity);
     _seen = (prefs.getStringList(_kSeen) ?? const []).toSet();
     _medicineReminders = prefs.getBool(_kReminders) ?? false;
+    final lang = prefs.getString(_kLanguage) ?? 'en';
+    _language = L10n.supported.contains(lang) ? lang : 'en';
+    L10n.code = _language;
     notifyListeners();
   }
 
@@ -47,6 +55,15 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_kScale, value);
+  }
+
+  Future<void> setLanguage(String code) async {
+    if (!L10n.supported.contains(code)) return;
+    _language = code;
+    L10n.code = code;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kLanguage, code);
   }
 
   Future<void> setCity(String? value) async {

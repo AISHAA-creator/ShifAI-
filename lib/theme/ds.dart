@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../l10n/translator.dart';
+
 /// Design tokens of the agreed ShifAI design (navy and sky blue from the logo,
 /// soft grey-white background, white rounded cards, Plus Jakarta Sans).
 class DS {
@@ -80,11 +82,16 @@ class DS {
     Color color = ink,
     double? height,
     double? letterSpacing,
-  }) => GoogleFonts.plusJakartaSans(
-    fontSize: size,
-    fontWeight: weight,
-    color: color,
-    height: height,
-    letterSpacing: letterSpacing,
-  );
+  }) {
+    // Plus Jakarta Sans has no Arabic letters; Cairo pairs well with it.
+    // Arabic letters join up, so letter spacing must stay at zero.
+    final arabic = L10n.code == 'ar';
+    return (arabic ? GoogleFonts.cairo : GoogleFonts.plusJakartaSans)(
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+      height: arabic && height != null ? height + 0.1 : height,
+      letterSpacing: arabic ? 0 : letterSpacing,
+    );
+  }
 }

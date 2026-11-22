@@ -16,6 +16,7 @@ import '../widgets/ds_widgets.dart';
 import 'find_doctor_screen.dart';
 import 'profile_form_screen.dart';
 import 'wellness_screen.dart';
+import '../l10n/tx.dart';
 
 /// For people with no blood test yet: skin signs, a private photo timeline,
 /// and a short risk questionnaire (after the ADA risk test). A self-check that
@@ -56,16 +57,16 @@ class SkinCheckScreen extends StatelessWidget {
       body: DsBackground(
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 32),
             children: [
               const Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: DsBackButton(),
               ),
               const SizedBox(height: 26),
               const DsTitle('Skin and', 'body check', size: 36),
               const SizedBox(height: 14),
-              Text(
+              Tx(
                 'No blood test yet? Some signs can point to insulin '
                 'resistance. This is a self-check, not a diagnosis.',
                 style: DS.text(
@@ -104,7 +105,7 @@ class SkinCheckScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      Tx(
                         'Add your age, height and weight first. They are part '
                         'of the score.',
                         style: DS.text(
@@ -161,7 +162,7 @@ class SkinCheckScreen extends StatelessWidget {
               const SizedBox(height: 22),
               _ResultCard(score: score, skinSign: skin.hasSkinSign),
               const SizedBox(height: 18),
-              Text(
+              Tx(
                 'This check does not diagnose anything. Only a blood test and '
                 'a doctor can.',
                 textAlign: TextAlign.center,
@@ -187,7 +188,7 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
-    child: Text(text, style: DS.text(size: 17, weight: FontWeight.w700)),
+    child: Tx(text, style: DS.text(size: 17, weight: FontWeight.w700)),
   );
 }
 
@@ -219,7 +220,7 @@ class _QuestionCard extends StatelessWidget {
               color: answer == value ? DS.navy : DS.field,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Text(
+            child: Tx(
               label,
               style: DS.text(
                 size: 15,
@@ -234,17 +235,17 @@ class _QuestionCard extends StatelessWidget {
 
     return DsCard(
       radius: 24,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          Tx(
             title,
             style: DS.text(size: 15.5, weight: FontWeight.w800, height: 1.3),
           ),
           if (detail != null) ...[
             const SizedBox(height: 4),
-            Text(
+            Tx(
               detail!,
               style: DS.text(
                 size: 13.5,
@@ -292,7 +293,7 @@ class _PhotoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          Tx(
             'Take a photo of the same place every few weeks, in good light. '
             'Photos stay on this phone. ShifAI does not analyse them; show '
             'them to your doctor.',
@@ -327,7 +328,7 @@ class _PhotoSection extends StatelessWidget {
               ],
             )
           else
-            Text(
+            Tx(
               'Photos are available in the phone app.',
               style: DS.text(
                 size: 14,
@@ -344,7 +345,7 @@ class _PhotoSection extends StatelessWidget {
                 children: [
                   for (final p in skin.photos.reversed)
                     Padding(
-                      padding: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsetsDirectional.only(end: 10),
                       child: GestureDetector(
                         onLongPress: () => skin.removePhoto(p),
                         child: Column(
@@ -369,7 +370,7 @@ class _PhotoSection extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
+                            Tx(
                               '${p.area == 'neck' ? 'Neck' : 'Armpit'}, '
                               '${DateFormat('d MMM').format(p.date)}',
                               style: DS.text(
@@ -386,7 +387,7 @@ class _PhotoSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
+            Tx(
               'Press and hold a photo to delete it.',
               style: DS.text(size: 12.5, color: DS.muted),
             ),
@@ -408,7 +409,7 @@ class _ResultCard extends StatelessWidget {
       return DsCard(
         radius: 26,
         padding: const EdgeInsets.all(20),
-        child: Text(
+        child: Tx(
           'Answer the questions above to see your result.',
           style: DS.text(color: DS.muted, height: 1.45),
         ),
@@ -433,12 +434,12 @@ class _ResultCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (score != null)
-                Text(
+                Tx(
                   'Risk score $score',
                   style: DS.text(size: 22, weight: FontWeight.w800, color: fg),
                 ),
               if (score != null) const SizedBox(height: 6),
-              Text(
+              Tx(
                 needsTest
                     ? [
                         if (high)

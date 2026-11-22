@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/activity_provider.dart';
 import '../providers/appointment_provider.dart';
+import '../providers/checkin_provider.dart';
 import '../providers/lab_records_provider.dart';
 import '../providers/medicine_provider.dart';
 import '../providers/settings_provider.dart';
@@ -10,9 +11,11 @@ import '../services/notices.dart';
 import '../theme/ds.dart';
 import '../utils/open_add_result.dart';
 import '../widgets/ds_widgets.dart';
+import 'checkin_screen.dart';
 import 'find_doctor_screen.dart';
 import 'medicine_screen.dart';
 import 'wellness_screen.dart';
+import '../l10n/tx.dart';
 
 /// Current notifications, built from what is in the app (see notices.dart).
 List<AppNotice> watchNotices(BuildContext context) {
@@ -24,6 +27,8 @@ List<AppNotice> watchNotices(BuildContext context) {
     medicineReminders: context.watch<SettingsProvider>().medicineReminders,
     weekMinutes: context.watch<ActivityProvider>().minutesThisWeek(now),
     now: now,
+    meals: context.watch<CheckInProvider>().meals,
+    feelings: context.watch<CheckInProvider>().feelings,
   );
 }
 
@@ -50,6 +55,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       NoticeKind.medicine => const MedicineScreen(),
       NoticeKind.doctor => const FindDoctorScreen(),
       NoticeKind.activity => const WellnessScreen(startOnMove: true),
+      NoticeKind.energy => const CheckInScreen(),
       _ => null,
     };
     if (n.kind == NoticeKind.lab) {
@@ -83,16 +89,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       NoticeKind.lab => Icons.document_scanner_outlined,
       NoticeKind.doctor => Icons.medical_services_outlined,
       NoticeKind.activity => Icons.directions_walk_rounded,
+      NoticeKind.energy => Icons.bolt_rounded,
     };
 
     return Scaffold(
       body: DsBackground(
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 28),
             children: [
               const Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: DsBackButton(),
               ),
               const SizedBox(height: 26),
@@ -108,12 +115,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         size: 56,
                       ),
                       const SizedBox(height: 14),
-                      Text(
+                      Tx(
                         'Nothing new',
                         style: DS.text(size: 19, weight: FontWeight.w800),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      Tx(
                         'Reminders about your tests, appointment, medicine and '
                         'activity show up here.',
                         textAlign: TextAlign.center,
@@ -141,7 +148,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              Tx(
                                 n.title,
                                 style: DS.text(
                                   size: 15.5,
@@ -150,7 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
+                              Tx(
                                 n.body,
                                 style: DS.text(
                                   size: 14,
@@ -166,7 +173,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           Container(
                             width: 10,
                             height: 10,
-                            margin: const EdgeInsets.only(left: 8),
+                            margin: const EdgeInsetsDirectional.only(start: 8),
                             decoration: const BoxDecoration(
                               color: DS.red,
                               shape: BoxShape.circle,
@@ -178,7 +185,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   const SizedBox(height: 10),
                 ],
               const SizedBox(height: 10),
-              Text(
+              Tx(
                 'These reminders appear inside the app. Alerts on your phone '
                 'screen are not set up yet.',
                 textAlign: TextAlign.center,

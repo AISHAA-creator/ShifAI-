@@ -8,6 +8,7 @@ import '../services/lab_ocr_service.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
 import 'lab_entry_form_screen.dart';
+import '../l10n/tx.dart';
 
 /// Step 1 of the scan flow: photo capture + on-device OCR of a printed lab
 /// report. Camera and OCR (Google ML Kit) only exist on Android/iOS, so this
@@ -93,7 +94,7 @@ class _LabScanScreenState extends State<LabScanScreen> {
       body: DsBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -110,7 +111,7 @@ class _LabScanScreenState extends State<LabScanScreen> {
                         color: DS.skyTint,
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: Text(
+                      child: Tx(
                         'Step 1 of 2',
                         style: DS.text(
                           size: 14,
@@ -127,7 +128,7 @@ class _LabScanScreenState extends State<LabScanScreen> {
                 Expanded(child: _viewfinder()),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(
+                  Tx(
                     _error!,
                     style: DS.text(size: 14, color: DS.redText, height: 1.4),
                   ),
@@ -178,7 +179,7 @@ class _LabScanScreenState extends State<LabScanScreen> {
             ),
           Positioned.fill(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(36, 40, 36, 150),
+              padding: const EdgeInsetsDirectional.fromSTEB(36, 40, 36, 150),
               child: CustomPaint(painter: _FramePainter()),
             ),
           ),
@@ -196,7 +197,7 @@ class _LabScanScreenState extends State<LabScanScreen> {
                             color: Colors.white.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(999),
                           ),
-                          child: Text(
+                          child: Tx(
                             'Fit the page in the frame',
                             style: DS.text(
                               size: 14.5,
@@ -207,9 +208,9 @@ class _LabScanScreenState extends State<LabScanScreen> {
                         )
                       : const SizedBox.shrink()),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
+          PositionedDirectional(
+            start: 0,
+            end: 0,
             bottom: 26,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,

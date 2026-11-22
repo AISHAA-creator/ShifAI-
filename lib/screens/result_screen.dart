@@ -16,6 +16,8 @@ import '../widgets/band_style.dart';
 import '../widgets/ds_widgets.dart';
 import 'find_doctor_screen.dart';
 import 'profile_form_screen.dart';
+import '../l10n/tx.dart';
+import '../l10n/translator.dart';
 
 /// Shown after "Confirm" on a scanned or typed result. Nothing is saved until
 /// the person chooses to save (or to find a doctor, which saves first).
@@ -101,7 +103,7 @@ class _ResultScreenState extends State<ResultScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            Tx(
               label,
               style: DS.text(
                 size: 12.5,
@@ -118,7 +120,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     style: DS.text(size: 17, weight: FontWeight.w800),
                   ),
                   TextSpan(
-                    text: unit,
+                    text: L10n.tr(unit),
                     style: DS.text(
                       size: 12,
                       weight: FontWeight.w600,
@@ -140,17 +142,22 @@ class _ResultScreenState extends State<ResultScreen> {
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                  padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 12),
                   children: [
                     const Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: DsBackButton(),
                     ),
                     const SizedBox(height: 26),
                     const DsTitle('Your', 'estimate'),
                     const SizedBox(height: 22),
                     DsCard(
-                      padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        22,
+                        24,
+                        22,
+                        22,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -170,7 +177,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                       track: tint(assessment.band).$1,
                                     ),
                                     child: Center(
-                                      child: Text(
+                                      child: Tx(
                                         '${assessment.percent}%',
                                         style: DS.text(
                                           size: 30,
@@ -195,7 +202,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                         vertical: 8,
                                       ),
                                       const SizedBox(height: 10),
-                                      Text(
+                                      Tx(
                                         'Chance that your HOMA-IR is 2.5 or '
                                         'higher, without an insulin test.',
                                         style: DS.text(
@@ -212,7 +219,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             ),
                             if (assessment.topFactors(max: 3).isNotEmpty) ...[
                               const SizedBox(height: 16),
-                              Text(
+                              Tx(
                                 'Mainly because of: '
                                 '${assessment.topFactors(max: 3).map((f) => f.label.toLowerCase()).join(', ')}.',
                                 style: DS.text(
@@ -223,7 +230,7 @@ class _ResultScreenState extends State<ResultScreen> {
                               ),
                             ],
                           ] else ...[
-                            Text(
+                            Tx(
                               'To turn these values into an estimate, add your '
                               'age, sex, height, weight and waist.',
                               style: DS.text(
@@ -283,7 +290,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     DsCard(
                       radius: 26,
                       padding: const EdgeInsets.all(20),
-                      child: Text(
+                      child: Tx(
                         'This estimate does not need an insulin test. A fasting '
                         'insulin test gives your exact HOMA-IR.',
                         style: DS.text(
@@ -302,7 +309,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 20),
                 child: Column(
                   children: [
                     DsOutlineButton(
@@ -310,7 +317,7 @@ class _ResultScreenState extends State<ResultScreen> {
                       onPressed: _saving ? null : _saveAndTrends,
                     ),
                     const SizedBox(height: 12),
-                    Text(
+                    Tx(
                       'A screening estimate, not a diagnosis.',
                       style: DS.text(
                         size: 13.5,
@@ -346,7 +353,7 @@ class _ResultScreenState extends State<ResultScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            Tx(
               label,
               style: DS.text(
                 size: 12.5,
@@ -363,7 +370,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     style: DS.text(size: 18, weight: FontWeight.w800),
                   ),
                   TextSpan(
-                    text: unit,
+                    text: L10n.tr(unit),
                     style: DS.text(
                       size: 12.5,
                       weight: FontWeight.w600,
@@ -385,17 +392,22 @@ class _ResultScreenState extends State<ResultScreen> {
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                  padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 12),
                   children: [
                     const Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: DsBackButton(),
                     ),
                     const SizedBox(height: 26),
                     const DsTitle('Your', 'result'),
                     const SizedBox(height: 22),
                     DsCard(
-                      padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        22,
+                        24,
+                        22,
+                        22,
+                      ),
                       child: Column(
                         children: [
                           Row(
@@ -413,7 +425,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
+                                        Tx(
                                           homa.toStringAsFixed(2),
                                           style: DS.text(
                                             size: 30,
@@ -421,7 +433,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                             letterSpacing: -0.6,
                                           ),
                                         ),
-                                        Text(
+                                        Tx(
                                           'HOMA-IR',
                                           style: DS.text(
                                             size: 12,
@@ -441,7 +453,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                   children: [
                                     BandChip(band: band, size: 13.5),
                                     const SizedBox(height: 10),
-                                    Text(
+                                    Tx(
                                       'Test date: ${DateFormat.yMMMd().format(record.date)}',
                                       style: DS.text(
                                         size: 14,
@@ -480,7 +492,7 @@ class _ResultScreenState extends State<ResultScreen> {
                       DsCard(
                         radius: 26,
                         padding: const EdgeInsets.all(20),
-                        child: Text(
+                        child: Tx(
                           bandExplanation(band),
                           style: DS.text(
                             size: 15,
@@ -494,7 +506,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 20),
                 child: Column(
                   children: [
                     DsOutlineButton(
@@ -502,7 +514,7 @@ class _ResultScreenState extends State<ResultScreen> {
                       onPressed: _saving ? null : _saveAndTrends,
                     ),
                     const SizedBox(height: 12),
-                    Text(
+                    Tx(
                       'A screening estimate, not a diagnosis.',
                       style: DS.text(
                         size: 13.5,
@@ -540,8 +552,8 @@ class _DoctorSuggestion extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Positioned(
-            right: -64,
+          PositionedDirectional(
+            end: -64,
             top: -74,
             child: Container(
               width: 190,
@@ -560,8 +572,8 @@ class _DoctorSuggestion extends StatelessWidget {
                 child: Stack(
                   children: [
                     for (var i = 0; i < faces.length; i++)
-                      Positioned(
-                        left: i * 42.0,
+                      PositionedDirectional(
+                        start: i * 42.0,
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -577,7 +589,7 @@ class _DoctorSuggestion extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
+              Tx(
                 'See a doctor about this result',
                 style: DS.text(
                   size: 22,
@@ -587,7 +599,7 @@ class _DoctorSuggestion extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
+              Tx(
                 city == null
                     ? 'Endocrinologists near you'
                     : (nearby.isEmpty
@@ -612,7 +624,7 @@ class _DoctorSuggestion extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text(
+                    child: Tx(
                       'Find a doctor',
                       style: DS.text(
                         size: 16.5,

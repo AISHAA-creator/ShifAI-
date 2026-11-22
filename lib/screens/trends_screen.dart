@@ -14,6 +14,7 @@ import '../utils/open_add_result.dart';
 import '../utils/share_summary.dart';
 import '../widgets/band_style.dart';
 import '../widgets/ds_widgets.dart';
+import '../l10n/tx.dart';
 
 enum TrendMetric { homaIr, glucose, hba1c, insulin }
 
@@ -89,11 +90,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
+        title: Tx(
           'Delete this result?',
           style: DS.text(weight: FontWeight.w800),
         ),
-        content: Text(
+        content: Tx(
           'It will be removed from your history and synced to your account '
           'when online.',
           style: DS.text(size: 15, height: 1.45),
@@ -101,11 +102,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: DS.redText)),
+            child: const Tx('Delete', style: TextStyle(color: DS.redText)),
           ),
         ],
       ),
@@ -121,12 +122,12 @@ class _TrendsScreenState extends State<TrendsScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
+        padding: const EdgeInsetsDirectional.fromSTEB(24, 24, 24, 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            Tx(
               DateFormat.yMMMMd().format(record.date),
               style: DS.text(size: 22, weight: FontWeight.w800),
             ),
@@ -134,7 +135,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
             if (record.homaIr != null)
               Row(
                 children: [
-                  Text(
+                  Tx(
                     record.homaIr!.toStringAsFixed(2),
                     style: DS.text(size: 34, weight: FontWeight.w800),
                   ),
@@ -177,11 +178,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
+        Tx(
           label,
           style: DS.text(size: 15, weight: FontWeight.w500, color: DS.muted),
         ),
-        Text(value, style: DS.text(size: 15.5, weight: FontWeight.w700)),
+        Tx(value, style: DS.text(size: 15.5, weight: FontWeight.w700)),
       ],
     ),
   );
@@ -197,7 +198,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       child: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 28),
           children: [
             const DsTitle('Your', 'trends', size: 38),
             const SizedBox(height: 22),
@@ -216,10 +217,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
               const SizedBox(height: 20),
               _ChartCard(metric: _metric, series: series),
               const SizedBox(height: 24),
-              Text(
-                'Results',
-                style: DS.text(size: 17, weight: FontWeight.w700),
-              ),
+              Tx('Results', style: DS.text(size: 17, weight: FontWeight.w700)),
               const SizedBox(height: 12),
               for (final r in all.reversed) ...[
                 _ResultRow(record: r, onTap: () => _openDetails(r)),
@@ -265,12 +263,9 @@ class _EmptyTrends extends StatelessWidget {
       children: [
         const DsIconBadge(icon: Icons.show_chart_rounded, size: 56),
         const SizedBox(height: 16),
-        Text(
-          'No results yet',
-          style: DS.text(size: 20, weight: FontWeight.w800),
-        ),
+        Tx('No results yet', style: DS.text(size: 20, weight: FontWeight.w800)),
         const SizedBox(height: 6),
-        Text(
+        Tx(
           'Scan a lab report to see your score and your trend.',
           textAlign: TextAlign.center,
           style: DS.text(
@@ -334,7 +329,7 @@ class _NoHomaCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                Tx(
                   'Estimate without insulin',
                   style: DS.text(
                     size: 15,
@@ -346,7 +341,7 @@ class _NoHomaCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
+            Tx(
               '${a.percent}%',
               style: DS.text(
                 size: 56,
@@ -356,7 +351,7 @@ class _NoHomaCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text(
+            Tx(
               reasons.isEmpty
                   ? 'Chance that your HOMA-IR is 2.5 or higher.'
                   : 'Chance that your HOMA-IR is 2.5 or higher. Mainly because '
@@ -375,7 +370,7 @@ class _NoHomaCard extends StatelessWidget {
 
     return DsCard(
       padding: const EdgeInsets.all(22),
-      child: Text(
+      child: Tx(
         hasLabs
             ? 'Add your age, sex, height, weight and waist in your profile to '
                   'get an estimate from these blood values.'
@@ -415,7 +410,7 @@ class _ScoreCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              Tx(
                 'HOMA-IR',
                 style: DS.text(
                   size: 15,
@@ -430,7 +425,7 @@ class _ScoreCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              Tx(
                 value.toStringAsFixed(2),
                 style: DS.text(
                   size: 60,
@@ -453,7 +448,7 @@ class _ScoreCard extends StatelessWidget {
                         color: lower ? DS.greenText : DS.amberText,
                       ),
                       const SizedBox(width: 4),
-                      Text(
+                      Tx(
                         '${change.abs().toStringAsFixed(2)} since '
                         '${DateFormat.MMM().format(first.date)}',
                         style: DS.text(
@@ -498,8 +493,8 @@ class _ScoreCard extends StatelessWidget {
                           ],
                         ],
                       ),
-                      Positioned(
-                        left: math.max(0, dotX - 10),
+                      PositionedDirectional(
+                        start: math.max(0, dotX - 10),
                         top: -5,
                         child: Container(
                           width: 20,
@@ -525,9 +520,9 @@ class _ScoreCard extends StatelessWidget {
                     height: 18,
                     child: Stack(
                       children: [
-                        Positioned(
-                          left: 0,
-                          child: Text(
+                        PositionedDirectional(
+                          start: 0,
+                          child: Tx(
                             '0',
                             style: DS.text(
                               size: 12.5,
@@ -541,9 +536,9 @@ class _ScoreCard extends StatelessWidget {
                           ('1.9', 1.9),
                           ('2.5', 2.5),
                         ])
-                          Positioned(
-                            left: (mark.$2 / _max) * c.maxWidth - 10,
-                            child: Text(
+                          PositionedDirectional(
+                            start: (mark.$2 / _max) * c.maxWidth - 10,
+                            child: Tx(
                               mark.$1,
                               style: DS.text(
                                 size: 12.5,
@@ -552,9 +547,9 @@ class _ScoreCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        Positioned(
-                          right: 0,
-                          child: Text(
+                        PositionedDirectional(
+                          end: 0,
+                          child: Tx(
                             '4.5+',
                             style: DS.text(
                               size: 12.5,
@@ -613,7 +608,7 @@ class _MetricTabs extends StatelessWidget {
                   ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(
+                    child: Tx(
                       m.tab,
                       style: DS.text(
                         size: 14,
@@ -658,7 +653,7 @@ class _ChartCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              Tx(
                 'Over time',
                 style: DS.text(size: 18, weight: FontWeight.w700),
               ),
@@ -672,13 +667,13 @@ class _ChartCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
+          Tx(
             n == 1 ? '1 lab checkup' : '$n lab checkups',
             style: DS.text(size: 14, weight: FontWeight.w500, color: DS.muted),
           ),
           const SizedBox(height: 14),
           if (n == 0)
-            Text(
+            Tx(
               'No results with this value yet.',
               style: DS.text(color: DS.muted),
             )
@@ -689,7 +684,7 @@ class _ChartCard extends StatelessWidget {
                 color: DS.field,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
+              child: Tx(
                 'Add one more result with this value to see your trend line.',
                 style: DS.text(size: 14.5, color: DS.muted, height: 1.4),
               ),
@@ -712,7 +707,7 @@ class _ChartCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  Tx(
                     'Healthy zone',
                     style: DS.text(
                       size: 13,
@@ -787,7 +782,7 @@ class _TrendChart extends StatelessWidget {
               showTitles: true,
               reservedSize: 36,
               interval: yInterval,
-              getTitlesWidget: (v, _) => Text(
+              getTitlesWidget: (v, _) => Tx(
                 v.toStringAsFixed(metric.decimals == 0 ? 0 : 1),
                 style: axis,
               ),
@@ -805,7 +800,7 @@ class _TrendChart extends StatelessWidget {
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(
+                  child: Tx(
                     DateFormat.MMM().format(series[i].date),
                     style: axis,
                   ),
@@ -903,7 +898,7 @@ class _ResultRow extends StatelessWidget {
                   color: band == null ? DS.field : bandBackground(band),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Text(
+                child: Tx(
                   record.homaIr == null
                       ? '--'
                       : record.homaIr!.toStringAsFixed(2),
@@ -919,12 +914,12 @@ class _ResultRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    Tx(
                       DateFormat.MMMd().format(record.date),
                       style: DS.text(size: 15.5, weight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    Tx(
                       parts.join(', '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

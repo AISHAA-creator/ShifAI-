@@ -9,6 +9,7 @@ import '../widgets/bottom_nav.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'trends_screen.dart';
+import '../l10n/tx.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key});
@@ -24,7 +25,7 @@ class AppShell extends StatelessWidget {
         children: [
           if (syncError case final error?)
             MaterialBanner(
-              content: Text(error),
+              content: Tx(error),
               leading: const Icon(Icons.cloud_off_outlined),
               actions: [
                 TextButton(
@@ -32,7 +33,7 @@ class AppShell extends StatelessWidget {
                     records.clearSyncError();
                     coaching.clearSyncError();
                   },
-                  child: const Text('Dismiss'),
+                  child: const Tx('Dismiss'),
                 ),
               ],
             ),

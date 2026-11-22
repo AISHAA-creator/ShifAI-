@@ -9,6 +9,8 @@ import '../providers/nav_provider.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
 import 'result_screen.dart';
+import '../l10n/tx.dart';
+import '../l10n/translator.dart';
 
 /// Check your results (after a scan) or type values in by hand.
 /// OCR suggests, the user always confirms before anything is saved.
@@ -119,7 +121,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
         trigRaw == null &&
         hdlRaw == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter at least one value to continue.')),
+        const SnackBar(content: Tx('Enter at least one value to continue.')),
       );
       return;
     }
@@ -198,7 +200,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
         ),
       ),
       const SizedBox(width: 6),
-      Text(
+      Tx(
         found ? 'From photo' : 'Not found',
         style: DS.text(
           size: 12.5,
@@ -229,7 +231,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: label,
+                        text: L10n.tr(label),
                         style: DS.text(size: 15.5, weight: FontWeight.w700),
                       ),
                       if (labelSuffix != null) WidgetSpan(child: labelSuffix),
@@ -272,7 +274,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
           width: 104,
           child: TextFormField(
             controller: controller,
-            validator: validator,
+            validator: trValidator(validator),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: DS.text(
               size: 26,
@@ -280,7 +282,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
               letterSpacing: -0.5,
             ),
             decoration: dsFieldDecoration(vertical: 15).copyWith(
-              hintText: semanticLabel,
+              hintText: L10n.tr(semanticLabel),
               hintStyle: DS.text(
                 size: 14,
                 weight: FontWeight.w600,
@@ -307,7 +309,12 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
               children: [
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      24,
+                      20,
+                      24,
+                      12,
+                    ),
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -323,7 +330,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                                 color: DS.skyTint,
                                 borderRadius: BorderRadius.circular(999),
                               ),
-                              child: Text(
+                              child: Tx(
                                 'Step 2 of 2',
                                 style: DS.text(
                                   size: 14,
@@ -339,7 +346,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                           ? const DsTitle('Check your', 'results', size: 36)
                           : const DsTitle('Add', 'result', size: 36),
                       const SizedBox(height: 12),
-                      Text(
+                      Tx(
                         scan
                             ? 'Compare with your paper report.'
                             : 'Type the values from your lab report.',
@@ -394,7 +401,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                       const SizedBox(height: 14),
                       _card(
                         label: 'HbA1c ',
-                        labelSuffix: Text(
+                        labelSuffix: Tx(
                           '(optional)',
                           style: DS.text(
                             size: 15.5,
@@ -413,10 +420,12 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                             hint: 'Add if you have it',
                             vertical: 18,
                             suffix: Padding(
-                              padding: const EdgeInsets.only(right: 18),
+                              padding: const EdgeInsetsDirectional.only(
+                                end: 18,
+                              ),
                               child: Center(
                                 widthFactor: 1,
-                                child: Text(
+                                child: Tx(
                                   '%',
                                   style: DS.text(
                                     size: 17,
@@ -446,7 +455,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                       const SizedBox(height: 14),
                       _card(
                         label: 'Triglycerides ',
-                        labelSuffix: Text(
+                        labelSuffix: Tx(
                           '(optional)',
                           style: DS.text(
                             size: 15.5,
@@ -477,7 +486,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                       const SizedBox(height: 14),
                       _card(
                         label: 'HDL cholesterol ',
-                        labelSuffix: Text(
+                        labelSuffix: Tx(
                           '(optional)',
                           style: DS.text(
                             size: 15.5,
@@ -527,7 +536,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                                     color: DS.navy,
                                   ),
                                   const SizedBox(width: 14),
-                                  Text(
+                                  Tx(
                                     DateFormat.yMMMd().format(_date),
                                     style: DS.text(
                                       size: 17,
@@ -544,11 +553,16 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                         const SizedBox(height: 10),
                         DsCard(
                           radius: 22,
-                          padding: const EdgeInsets.fromLTRB(18, 8, 8, 8),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            18,
+                            8,
+                            8,
+                            8,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
-                                child: Text(
+                                child: Tx(
                                   '${_otherMarkers[i].name}: '
                                   '${_otherMarkers[i].value} ${_otherMarkers[i].unit}',
                                   style: DS.text(
@@ -558,7 +572,9 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                                 ),
                               ),
                               IconButton(
-                                tooltip: 'Remove ${_otherMarkers[i].name}',
+                                tooltip: L10n.tr(
+                                  'Remove ${_otherMarkers[i].name}',
+                                ),
                                 onPressed: () =>
                                     setState(() => _otherMarkers.removeAt(i)),
                                 icon: const Icon(
@@ -578,7 +594,7 @@ class _LabEntryFormScreenState extends State<LabEntryFormScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                  padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 16),
                   child: Column(
                     children: [
                       DsPrimaryButton(
@@ -631,7 +647,7 @@ class _AddMarkerDialogState extends State<_AddMarkerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add lab marker'),
+      title: const Tx('Add lab marker'),
       content: Form(
         key: _formKey,
         child: Column(
@@ -639,10 +655,12 @@ class _AddMarkerDialogState extends State<_AddMarkerDialog> {
           children: [
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Marker name'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter a name.'
-                  : null,
+              decoration: InputDecoration(labelText: L10n.tr('Marker name')),
+              validator: trValidator(
+                (value) => value == null || value.trim().isEmpty
+                    ? 'Enter a name.'
+                    : null,
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -650,20 +668,25 @@ class _AddMarkerDialogState extends State<_AddMarkerDialog> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              decoration: const InputDecoration(labelText: 'Value'),
-              validator: (value) =>
-                  widget.validateOptionalPositive(value, 'numeric') ??
-                  ((double.tryParse((value ?? '').replaceAll(',', '.')) == null)
-                      ? 'Enter a valid value.'
-                      : null),
+              decoration: InputDecoration(labelText: L10n.tr('Value')),
+              validator: trValidator(
+                (value) =>
+                    widget.validateOptionalPositive(value, 'numeric') ??
+                    ((double.tryParse((value ?? '').replaceAll(',', '.')) ==
+                            null)
+                        ? 'Enter a valid value.'
+                        : null),
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _unitController,
-              decoration: const InputDecoration(labelText: 'Unit'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter a unit.'
-                  : null,
+              decoration: InputDecoration(labelText: L10n.tr('Unit')),
+              validator: trValidator(
+                (value) => value == null || value.trim().isEmpty
+                    ? 'Enter a unit.'
+                    : null,
+              ),
             ),
           ],
         ),
@@ -671,7 +694,7 @@ class _AddMarkerDialogState extends State<_AddMarkerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Tx('Cancel'),
         ),
         FilledButton(
           onPressed: () {
@@ -687,7 +710,7 @@ class _AddMarkerDialogState extends State<_AddMarkerDialog> {
               ),
             );
           },
-          child: const Text('Add marker'),
+          child: const Tx('Add marker'),
         ),
       ],
     );

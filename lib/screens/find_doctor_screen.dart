@@ -7,6 +7,7 @@ import '../theme/ds.dart';
 import '../widgets/city_picker.dart';
 import '../widgets/ds_widgets.dart';
 import 'book_screen.dart';
+import '../l10n/tx.dart';
 
 /// Step after a high result (or from Home): doctors in the chosen city.
 /// The list is sample data until a real directory of verified doctors exists.
@@ -30,10 +31,10 @@ class _FindDoctorScreenState extends State<FindDoctorScreen> {
       body: DsBackground(
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 28),
             children: [
               const Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: DsBackButton(),
               ),
               const SizedBox(height: 26),
@@ -61,7 +62,7 @@ class _FindDoctorScreenState extends State<FindDoctorScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
+                          child: Tx(
                             city ?? 'Choose your city',
                             style: DS.text(
                               weight: FontWeight.w600,
@@ -101,7 +102,7 @@ class _FindDoctorScreenState extends State<FindDoctorScreen> {
                                   : DS.navy.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: Text(
+                            child: Tx(
                               s,
                               style: DS.text(
                                 size: 14,
@@ -125,11 +126,11 @@ class _FindDoctorScreenState extends State<FindDoctorScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  Tx(
                     city == null ? 'Doctors' : 'In $city',
                     style: DS.text(size: 17, weight: FontWeight.w700),
                   ),
-                  Text(
+                  Tx(
                     'Sample list',
                     style: DS.text(
                       size: 13,
@@ -145,7 +146,7 @@ class _FindDoctorScreenState extends State<FindDoctorScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      Tx(
                         'Choose your city to see the doctors listed there.',
                         style: DS.text(color: DS.muted, height: 1.45),
                       ),
@@ -160,7 +161,7 @@ class _FindDoctorScreenState extends State<FindDoctorScreen> {
                 )
               else if (doctors.isEmpty)
                 DsCard(
-                  child: Text(
+                  child: Tx(
                     'No $_specialty is listed in $city yet. Doctors will be '
                     'added city by city. Try a bigger city nearby.',
                     style: DS.text(color: DS.muted, height: 1.45),
@@ -181,7 +182,7 @@ class _FindDoctorScreenState extends State<FindDoctorScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
+                    child: Tx(
                       'Doctors will be verified before they are listed.',
                       style: DS.text(
                         size: 14,
@@ -220,7 +221,7 @@ class _DoctorCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    Tx(
                       doctor.name,
                       style: DS.text(
                         size: 17,
@@ -229,7 +230,7 @@ class _DoctorCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    Tx(
                       doctor.specialty,
                       style: DS.text(
                         size: 14,
@@ -254,7 +255,7 @@ class _DoctorCard extends StatelessWidget {
               const Icon(Icons.schedule_rounded, size: 18, color: DS.muted),
               const SizedBox(width: 7),
               Expanded(
-                child: Text(
+                child: Tx(
                   doctor.nextSlot,
                   style: DS.text(
                     size: 14,
@@ -280,7 +281,7 @@ class _DoctorCard extends StatelessWidget {
                       color: DS.navy,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text(
+                    child: Tx(
                       'Book',
                       style: DS.text(
                         size: 15,

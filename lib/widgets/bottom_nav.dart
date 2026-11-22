@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/ds.dart';
+import '../l10n/tx.dart';
 
 /// Bottom bar of the agreed design: Home, Trends, Scan, Profile.
 /// Scan opens the scan flow instead of switching tab.
@@ -34,7 +35,7 @@ class BottomNav extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+          padding: const EdgeInsetsDirectional.fromSTEB(8, 12, 8, 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -108,7 +109,7 @@ class _Item extends StatelessWidget {
               const SizedBox(height: 4),
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
+                child: Tx(
                   label,
                   style: DS.text(
                     size: 12.5,

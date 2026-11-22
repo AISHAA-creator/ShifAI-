@@ -15,6 +15,7 @@ import '../utils/share_summary.dart';
 import '../widgets/band_style.dart';
 import '../widgets/ds_widgets.dart';
 import 'book_screen.dart';
+import 'checkin_screen.dart';
 import 'emergency_screen.dart';
 import 'find_doctor_screen.dart';
 import 'lab_entry_form_screen.dart';
@@ -24,6 +25,7 @@ import 'search_screen.dart';
 import 'shortcuts_screen.dart';
 import 'skin_check_screen.dart';
 import 'wellness_screen.dart';
+import '../l10n/tx.dart';
 
 /// Home. Three states, step by step:
 ///  1. first visit: no result yet, no doctor
@@ -50,7 +52,7 @@ class HomeScreen extends StatelessWidget {
   void _soon(BuildContext context, String what) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(what)));
+      ..showSnackBar(SnackBar(content: Tx(what)));
   }
 
   @override
@@ -130,18 +132,18 @@ class HomeScreen extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 28),
           children: [
             Row(
               children: [
                 Expanded(
                   child: Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: AlignmentDirectional.centerStart,
                     child: Image.asset(
                       'assets/images/shifai_logo.png',
                       width: 112,
                       fit: BoxFit.contain,
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       semanticLabel: 'ShifAI',
                     ),
                   ),
@@ -178,9 +180,9 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         if (unseen > 0)
-                          Positioned(
+                          PositionedDirectional(
                             top: -3,
-                            right: -3,
+                            end: -3,
                             child: Container(
                               constraints: const BoxConstraints(
                                 minWidth: 22,
@@ -195,7 +197,7 @@ class HomeScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(11),
                                 border: Border.all(color: DS.bgTop, width: 2),
                               ),
-                              child: Text(
+                              child: Tx(
                                 '$unseen',
                                 style: DS.text(
                                   size: 12,
@@ -215,7 +217,7 @@ class HomeScreen extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                Tx(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -226,7 +228,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
+                Tx(
                   firstVisit
                       ? "Let's look at your numbers"
                       : 'Your health at a glance',
@@ -260,7 +262,7 @@ class HomeScreen extends StatelessWidget {
                         color: DS.iconMuted,
                       ),
                       const SizedBox(width: 12),
-                      Text('Search', style: DS.text(color: DS.iconMuted)),
+                      Tx('Search', style: DS.text(color: DS.iconMuted)),
                     ],
                   ),
                 ),
@@ -306,6 +308,13 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Food and activity tips to lower your risk',
               onTap: () => _push(context, const WellnessScreen()),
             ),
+            const SizedBox(height: 10),
+            _FeatureCard(
+              icon: Icons.bolt_rounded,
+              title: 'Meals and energy',
+              subtitle: 'Find out what your own body reacts to',
+              onTap: () => _push(context, const CheckInScreen()),
+            ),
             if (labs.records.isEmpty) ...[
               const SizedBox(height: 10),
               _FeatureCard(
@@ -317,7 +326,7 @@ class HomeScreen extends StatelessWidget {
             ],
             if (firstVisit) ...[
               const SizedBox(height: 24),
-              Text(
+              Tx(
                 'How it works',
                 style: DS.text(size: 17, weight: FontWeight.w700),
               ),
@@ -387,8 +396,8 @@ class _Banner extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Positioned(
-            right: -30,
+          PositionedDirectional(
+            end: -30,
             bottom: -60,
             child: Container(
               width: 230,
@@ -400,8 +409,8 @@ class _Banner extends StatelessWidget {
             ),
           ),
           if (doctorPhoto != null)
-            Positioned(
-              right: 16,
+            PositionedDirectional(
+              end: 16,
               bottom: -3,
               child: Container(
                 width: 128,
@@ -429,8 +438,8 @@ class _Banner extends StatelessWidget {
               ),
             )
           else
-            Positioned(
-              right: 26,
+            PositionedDirectional(
+              end: 26,
               top: 26,
               child: Transform.rotate(
                 angle: 7 * math.pi / 180,
@@ -444,7 +453,7 @@ class _Banner extends StatelessWidget {
               children: [
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 170),
-                  child: Text(
+                  child: Tx(
                     title,
                     style: DS.text(
                       size: 21,
@@ -470,7 +479,7 @@ class _Banner extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
+                          Tx(
                             button,
                             style: DS.text(
                               size: 15,
@@ -596,9 +605,9 @@ class _FeatureCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: DS.text(size: 16, weight: FontWeight.w800)),
+              Tx(title, style: DS.text(size: 16, weight: FontWeight.w800)),
               const SizedBox(height: 2),
-              Text(
+              Tx(
                 subtitle,
                 style: DS.text(
                   size: 13.5,
@@ -633,7 +642,7 @@ class _Step extends StatelessWidget {
       children: [
         DsIconBadge(icon: icon, size: 42),
         const SizedBox(height: 10),
-        Text(label, style: DS.text(size: 14, weight: FontWeight.w700)),
+        Tx(label, style: DS.text(size: 14, weight: FontWeight.w700)),
       ],
     ),
   );
@@ -648,22 +657,22 @@ class _AppointmentCard extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
+        title: Tx(
           'Cancel this appointment?',
           style: DS.text(weight: FontWeight.w800),
         ),
-        content: Text(
+        content: Tx(
           'Your doctor will no longer see your results.',
           style: DS.text(size: 15, height: 1.45),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep it'),
+            child: const Tx('Keep it'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
+            child: const Tx(
               'Cancel appointment',
               style: TextStyle(color: DS.redText),
             ),
@@ -682,7 +691,7 @@ class _AppointmentCard extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: const Color(0xFF44546A)),
         const SizedBox(width: 7),
-        Text(
+        Tx(
           text,
           style: DS.text(
             size: 13.5,
@@ -705,12 +714,12 @@ class _AppointmentCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    Tx(
                       doctor.name,
                       style: DS.text(size: 16, weight: FontWeight.w800),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    Tx(
                       doctor.specialty,
                       style: DS.text(
                         size: 14,
@@ -796,7 +805,7 @@ class _LatestResultCard extends StatelessWidget {
                 color: bandColor(band),
               ),
               child: Center(
-                child: Text(
+                child: Tx(
                   homa.toStringAsFixed(1),
                   style: DS.text(
                     size: 22,
@@ -813,11 +822,11 @@ class _LatestResultCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: BandChip(band: band),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                Tx(
                   'HOMA-IR, ${DateFormat.yMMMd().format(record.date)}',
                   style: DS.text(
                     size: 14,

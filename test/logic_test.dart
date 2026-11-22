@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shifai/models/checkin.dart';
 import 'package:shifai/models/lab_record.dart';
 import 'package:shifai/providers/appointment_provider.dart';
 import 'package:shifai/providers/medicine_provider.dart';
@@ -174,6 +175,36 @@ void main() {
         expect(ids.where((i) => i.startsWith('med-m2')), isEmpty);
       },
     );
+
+    test('a meal 90 minutes ago with no energy check asks for one', () {
+      final meal = MealLog(
+        id: 'm1',
+        time: now.subtract(const Duration(minutes: 90)),
+        kind: MealKind.lunch,
+        carb: CarbLevel.heavy,
+      );
+      List<AppNotice> withFeelings(List<EnergyLog> f) => buildNotices(
+        records: const [],
+        appointment: null,
+        medicines: const [],
+        medicineReminders: false,
+        weekMinutes: 200,
+        now: now,
+        meals: [meal],
+        feelings: f,
+      );
+      expect(withFeelings(const []).map((n) => n.id), contains('energy-m1'));
+      final answered = EnergyLog(
+        id: 'e1',
+        time: now.subtract(const Duration(minutes: 5)),
+        energy: 3,
+        craving: false,
+      );
+      expect(
+        withFeelings([answered]).map((n) => n.id),
+        isNot(contains('energy-m1')),
+      );
+    });
 
     test('low activity late in the week gets a nudge', () {
       expect(build(minutes: 40).any((n) => n.id.startsWith('move-')), isTrue);

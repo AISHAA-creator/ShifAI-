@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/ds.dart';
+import '../l10n/translator.dart';
+import '../l10n/tx.dart';
 
 /// Soft grey-white gradient behind every screen.
 class DsBackground extends StatelessWidget {
@@ -47,21 +49,34 @@ class DsTitle extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => Text.rich(
-    TextSpan(
-      children: [
-        TextSpan(
-          text: '$first\n',
-          style: DS.text(size: size, weight: FontWeight.w500),
-        ),
-        TextSpan(
-          text: second,
-          style: DS.text(size: size, weight: FontWeight.w800),
-        ),
-      ],
-    ),
-    style: TextStyle(height: 1.1, letterSpacing: -size * 0.02),
-  );
+  Widget build(BuildContext context) {
+    final code = LangScope.of(context);
+    final (a, b) = L10n.title(first, second, code);
+    // Arabic letters join up, so they must not be squeezed together.
+    final tight = code == 'ar' ? 0.0 : -size * 0.02;
+    return Text.rich(
+      TextSpan(
+        children: [
+          if (b.isEmpty)
+            TextSpan(
+              text: a,
+              style: DS.text(size: size, weight: FontWeight.w800),
+            )
+          else ...[
+            TextSpan(
+              text: '$a\n',
+              style: DS.text(size: size, weight: FontWeight.w500),
+            ),
+            TextSpan(
+              text: b,
+              style: DS.text(size: size, weight: FontWeight.w800),
+            ),
+          ],
+        ],
+      ),
+      style: TextStyle(height: code == 'ar' ? 1.3 : 1.1, letterSpacing: tight),
+    );
+  }
 }
 
 class DsCard extends StatelessWidget {
@@ -75,7 +90,7 @@ class DsCard extends StatelessWidget {
     this.onTap,
   });
   final Widget child;
-  final EdgeInsets padding;
+  final EdgeInsetsGeometry padding;
   final double radius;
   final Color color;
   final bool shadow;
@@ -158,7 +173,7 @@ class DsPrimaryButton extends StatelessWidget {
                         const SizedBox(width: 8),
                       ],
                       Flexible(
-                        child: Text(
+                        child: Tx(
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -222,7 +237,7 @@ class DsOutlineButton extends StatelessWidget {
               const SizedBox(width: 8),
             ],
             Flexible(
-              child: Text(
+              child: Tx(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -252,7 +267,7 @@ class DsTextAction extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final Color color;
-  final Alignment alignment;
+  final AlignmentGeometry alignment;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -261,7 +276,7 @@ class DsTextAction extends StatelessWidget {
     child: Container(
       constraints: const BoxConstraints(minHeight: 48),
       alignment: alignment,
-      child: Text(
+      child: Tx(
         label,
         style: DS.text(size: 15.5, weight: FontWeight.w700, color: color),
       ),
@@ -305,7 +320,7 @@ class DsPill extends StatelessWidget {
           const SizedBox(width: 6),
         ],
         Flexible(
-          child: Text(
+          child: Tx(
             label,
             style: DS.text(
               size: size,
@@ -330,7 +345,7 @@ class DsSectionHeader extends StatelessWidget {
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
       Expanded(
-        child: Text(
+        child: Tx(
           title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -343,8 +358,8 @@ class DsSectionHeader extends StatelessWidget {
           onTap: onAction,
           child: Container(
             constraints: const BoxConstraints(minHeight: 44),
-            alignment: Alignment.centerRight,
-            child: Text(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Tx(
               action!,
               style: DS.text(
                 size: 14,
@@ -401,7 +416,7 @@ class DsQuickAction extends StatelessWidget {
             const SizedBox(height: 9),
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(
+              child: Tx(
                 label,
                 maxLines: 1,
                 style: DS.text(size: 13.5, weight: FontWeight.w600),
@@ -451,13 +466,13 @@ class DsTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
-      validator: validator,
+      validator: trValidator(validator),
       autofillHints: autofillHints,
       textCapitalization: textCapitalization,
       onChanged: onChanged,
       style: DS.text(size: 16.5, weight: FontWeight.w600),
       decoration: InputDecoration(
-        hintText: label,
+        hintText: L10n.tr(label),
         hintStyle: DS.text(
           size: 16.5,
           weight: FontWeight.w500,
@@ -471,7 +486,7 @@ class DsTextField extends StatelessWidget {
         filled: false,
         contentPadding: const EdgeInsets.symmetric(vertical: 21),
         prefixIcon: Padding(
-          padding: const EdgeInsets.only(left: 20, right: 14),
+          padding: const EdgeInsetsDirectional.only(start: 20, end: 14),
           child: Icon(icon, size: 22, color: DS.navy),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
@@ -489,7 +504,7 @@ InputDecoration dsFieldDecoration({
   Widget? suffix,
   double vertical = 18,
 }) => InputDecoration(
-  hintText: hint,
+  hintText: hint == null ? null : L10n.tr(hint),
   hintStyle: DS.text(size: 17, weight: FontWeight.w600, color: DS.iconMuted),
   filled: true,
   fillColor: DS.field,
@@ -564,7 +579,7 @@ class DsSegmented<T> extends StatelessWidget {
                     color: entry.key == value ? DS.navy : Colors.transparent,
                     borderRadius: BorderRadius.circular(radius - 4),
                   ),
-                  child: Text(
+                  child: Tx(
                     entry.value,
                     style: DS.text(
                       size: fontSize,
@@ -599,7 +614,9 @@ class DsSwitch extends StatelessWidget {
         width: 54,
         height: 32,
         padding: const EdgeInsets.all(4),
-        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+        alignment: value
+            ? AlignmentDirectional.centerEnd
+            : AlignmentDirectional.centerStart,
         decoration: BoxDecoration(
           color: value ? DS.navy : DS.hairline,
           borderRadius: BorderRadius.circular(999),

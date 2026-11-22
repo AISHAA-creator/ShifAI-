@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
+import '../l10n/tx.dart';
 
 /// Web: reading a prescription needs the phone camera and Google ML Kit.
 class PrescriptionScanScreen extends StatelessWidget {
@@ -13,7 +14,7 @@ class PrescriptionScanScreen extends StatelessWidget {
       body: DsBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -21,7 +22,7 @@ class PrescriptionScanScreen extends StatelessWidget {
                 const SizedBox(height: 26),
                 const DsTitle('Scan your', 'prescription', size: 36),
                 const SizedBox(height: 14),
-                Text(
+                Tx(
                   'Reading a prescription from a photo works in the Android '
                   'and iPhone app. On the web, add your medicine by hand.',
                   style: DS.text(

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/lab_record.dart';
+import '../l10n/tx.dart';
 
 /// Opens WhatsApp with a short text summary of [latest]. Nothing is sent
 /// unless the user presses send in WhatsApp.
@@ -48,7 +49,7 @@ Future<void> shareSummaryOnWhatsApp(
   }
   if (!opened && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Couldn't open WhatsApp on this device.")),
+      const SnackBar(content: Tx("Couldn't open WhatsApp on this device.")),
     );
   }
 }

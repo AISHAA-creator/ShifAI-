@@ -1,11 +1,12 @@
 import 'package:intl/intl.dart';
 
+import '../models/checkin.dart';
 import '../models/lab_record.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/medicine_provider.dart';
 import '../models/wellness_content.dart';
 
-enum NoticeKind { appointment, medicine, lab, doctor, activity }
+enum NoticeKind { appointment, medicine, lab, doctor, activity, energy }
 
 /// One entry of the notification list. Built from what is in the app (no
 /// server, no push): the id changes when the situation changes, so a new
@@ -31,6 +32,8 @@ List<AppNotice> buildNotices({
   required bool medicineReminders,
   required int weekMinutes,
   required DateTime now,
+  List<MealLog> meals = const [],
+  List<EnergyLog> feelings = const [],
 }) {
   final out = <AppNotice>[];
   final day = Medicine.dayKey(now);
@@ -101,6 +104,26 @@ List<AppNotice> buildNotices({
           kind: NoticeKind.doctor,
           title: 'Your latest result is high',
           body: 'Talking to a doctor is a good next step.',
+        ),
+      );
+    }
+  }
+
+  // A meal logged 1 to 3 hours ago with no energy check after it yet.
+  if (meals.isNotEmpty) {
+    final meal =
+        (meals.toList()..sort((a, b) => a.time.compareTo(b.time))).last;
+    final since = now.difference(meal.time).inMinutes;
+    final answered = feelings.any(
+      (f) => f.time.isAfter(meal.time.add(const Duration(minutes: 30))),
+    );
+    if (since >= 60 && since <= 180 && !answered) {
+      out.add(
+        AppNotice(
+          id: 'energy-${meal.id}',
+          kind: NoticeKind.energy,
+          title: 'How is your energy after ${meal.kind.label.toLowerCase()}?',
+          body: 'A quick check helps ShifAI find your pattern.',
         ),
       );
     }

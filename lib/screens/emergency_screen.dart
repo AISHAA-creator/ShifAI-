@@ -10,6 +10,7 @@ import '../providers/medicine_provider.dart';
 import '../providers/profile_provider.dart';
 import '../theme/ds.dart';
 import '../widgets/ds_widgets.dart';
+import '../l10n/tx.dart';
 
 /// Emergency help. The dialer opens with the number filled in; the person
 /// still has to press call. ShifAI cannot judge an emergency.
@@ -31,7 +32,7 @@ class EmergencyScreen extends StatelessWidget {
     }
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open the dialer. Call $number.')),
+        SnackBar(content: Tx('Could not open the dialer. Call $number.')),
       );
     }
   }
@@ -60,7 +61,7 @@ class EmergencyScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          Tx(
             label,
             style: DS.text(
               size: 12.5,
@@ -69,7 +70,7 @@ class EmergencyScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
+          Tx(
             value,
             style: DS.text(
               size: 15.5,
@@ -85,10 +86,10 @@ class EmergencyScreen extends StatelessWidget {
       body: DsBackground(
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 20, 24, 28),
             children: [
               const Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: DsBackButton(),
               ),
               const SizedBox(height: 26),
@@ -100,7 +101,12 @@ class EmergencyScreen extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => _dial(context, emergencyNumber),
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      22,
+                      20,
+                      22,
+                      20,
+                    ),
                     decoration: BoxDecoration(
                       color: DS.emergency,
                       borderRadius: BorderRadius.circular(28),
@@ -132,7 +138,7 @@ class EmergencyScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              Tx(
                                 'Call emergency services',
                                 style: DS.text(
                                   size: 20,
@@ -142,7 +148,7 @@ class EmergencyScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 3),
-                              Text(
+                              Tx(
                                 'Opens your phone',
                                 style: DS.text(
                                   size: 13.5,
@@ -168,7 +174,7 @@ class EmergencyScreen extends StatelessWidget {
                   ),
                   onTap: () => ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text(
+                      content: Tx(
                         "This doctor's phone number is not available in the prototype.",
                       ),
                     ),
@@ -181,12 +187,12 @@ class EmergencyScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            Tx(
                               'Call ${doctor.name}',
                               style: DS.text(size: 16, weight: FontWeight.w800),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            Tx(
                               'Your doctor',
                               style: DS.text(
                                 size: 13.5,
@@ -210,7 +216,7 @@ class EmergencyScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    Tx(
                       'Call now if you have',
                       style: DS.text(size: 17, weight: FontWeight.w700),
                     ),
@@ -233,7 +239,7 @@ class EmergencyScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
+                            child: Tx(
                               s,
                               style: DS.text(
                                 size: 15.5,
@@ -250,7 +256,7 @@ class EmergencyScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+                padding: const EdgeInsetsDirectional.fromSTEB(22, 20, 22, 20),
                 decoration: BoxDecoration(
                   gradient: DS.navyGradient,
                   borderRadius: BorderRadius.circular(28),
@@ -262,7 +268,7 @@ class EmergencyScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        Tx(
                           'My medical ID',
                           style: DS.text(
                             size: 17,
@@ -279,7 +285,7 @@ class EmergencyScreen extends StatelessWidget {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(999),
                           ),
-                          child: Text(
+                          child: Tx(
                             'Show to responders',
                             style: DS.text(
                               size: 12.5,
@@ -312,7 +318,7 @@ class EmergencyScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Center(
-                child: Text(
+                child: Tx(
                   'ShifAI cannot judge an emergency. If in doubt, call.',
                   textAlign: TextAlign.center,
                   style: DS.text(
