@@ -1,0 +1,12 @@
+# Environnements Python
+.env
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# VS Code / système
+.vscode/
+.DS_Store
+Thumbs.db
